@@ -1,0 +1,9 @@
+spring:
+  datasource:
+    username: azureuser
+    password: Keadat22!
+    url: aichatproject.mysql.database.azure.com
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
