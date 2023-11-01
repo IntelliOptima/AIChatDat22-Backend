@@ -1,9 +1,15 @@
 spring:
-  datasource:
+  application:
+    name: aichatdat-backend
+
+  r2dbc:
+    url: r2dbc:mysql://aichatproject.mysql.database.azure.com/chataidb?
     username: azureuser
     password: Keadat22!
-    url: aichatproject.mysql.database.azure.com
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
+    pool:
+      max-create-connection-time: 2s
+      initial-size: 5
+      max-size: 10
+logging:
+  level:
+    io.r2dbc: info
