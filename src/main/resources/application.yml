@@ -1,6 +1,16 @@
+server:
+  port: 8080
+  shutdown: graceful
+  netty:
+    connection-timeout: 2s
+    idle-timeout: 15s
+
 spring:
   application:
     name: aichatdat-backend
+
+  lifecycle:
+    timeout-per-shutdown-phase: 15s
 
   r2dbc:
     url: r2dbc:mysql://aichatproject.mysql.database.azure.com/chataidb?
@@ -10,6 +20,13 @@ spring:
       max-create-connection-time: 2s
       initial-size: 5
       max-size: 10
+
+
+  flyway:
+    url: jdbc:mysql://aichatproject.mysql.database.azure.com/chataidb?
+    user: ${spring.r2dbc.username}
+    password: ${spring.r2dbc.password}
+
 logging:
   level:
-    io.r2dbc: info
+    '[io.r2dbc]': info
