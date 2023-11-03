@@ -3,6 +3,8 @@ package com.example.aichatprojectdat.message.repository;
 import com.example.aichatprojectdat.integration.AbstractIntegrationTest;
 import com.example.aichatprojectdat.message.model.Message;
 import com.example.aichatprojectdat.message.service.IMessageService;
+
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -24,28 +26,28 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
     @Test
     void createMessageWithService_ReturnsNewCreatedMessage() {
         long userId = 1L;
-        String mockMessage = "Test message";
-        long receiver = 2L;
+        String mockMessage = "Test message one";
+        long chatroomId = 2L;
 
-        Mono<Message> messageMono = messageService.saveMessage(Message.of(userId, mockMessage, receiver));
+        Mono<Message> messageMono = messageService.saveMessage(Message.of(userId, mockMessage, chatroomId));
 
         StepVerifier.create(messageMono)
                 .consumeNextWith(message -> {
                     assertTrue(message.id() > 0);
                     assertEquals(message.message(), mockMessage);
                     assertEquals(message.userId(), userId);
-                    assertEquals(message.chatroomId(), receiver);
+                    assertEquals(message.chatroomId(), chatroomId);
                 })
                 .verifyComplete();
     }
 
     @Test
-    void fetchingMessagesFromDB_ByUserId_ReturnAllUserIdsMessages() {
+    void fetchingMessagesFromDB_ByUserId_ReturnsAllUserIdsMessages() {
         long userId = 1L;
-        String mockMessage = "Test message";
-        long receiver = 2L;
+        String mockMessage = "Test message two";
+        long chatroomId = 2L;
 
-        Mono<Message> saveOperation = messageService.saveMessage(Message.of(userId, mockMessage, receiver));
+        Mono<Message> saveOperation = messageService.saveMessage(Message.of(userId, mockMessage, chatroomId));
 
         // Ensure findAllByUserId is chained after the save operation completes
         Mono<List<Message>> messagesListMono = saveOperation
@@ -66,6 +68,26 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
                 .verify();
     }
 
+
+     /*@Test
+     void fetchingMessagesFromDB_ByChatroomId_ReturnsAllMessages() {
+         long chatroomId = 2L;
+        
+         Mono<List<Message>> chatroomMessages = messageService.findMessagesByChatroomId(chatroomId)
+                 .collectList();
+
+         StepVerifier.create(chatroomMessages)
+                 .assertNext(messagesList -> {
+                         assertFalse(messagesList.isEmpty(), "This list of messages should not be empty");
+                         messagesList.forEach(message -> {
+                                 assertEquals(message.chatroomId(), chatroomId);
+                         });
+                 })
+                 .expectComplete()
+                 .verify();
+     }*/
+
+    
     @Test
     void testDeleteMessageByIdSuccess() {
         long userId = 1L;

@@ -29,4 +29,4 @@ spring:
 
 logging:
   level:
-    io.r2dbc: info
+    '[io.r2dbc]': info
