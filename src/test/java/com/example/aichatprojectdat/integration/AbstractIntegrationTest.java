@@ -1,5 +1,6 @@
 package com.example.aichatprojectdat.integration;
 
+import org.junit.jupiter.api.Order;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.MySQLContainer;
@@ -7,6 +8,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
+@Order(1)
 @Testcontainers // Indicates that Testcontainers should be used
 public abstract class AbstractIntegrationTest {
 
