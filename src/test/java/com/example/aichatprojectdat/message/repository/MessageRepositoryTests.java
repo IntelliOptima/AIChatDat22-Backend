@@ -23,7 +23,6 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
     @Autowired
     private IMessageService messageService;
 
-    @Order(1)
     @Test
     void createMessageWithService_ReturnsNewCreatedMessage() {
         long userId = 1L;
@@ -42,7 +41,6 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
                 .verifyComplete();
     }
 
-    @Order(2)
     @Test
     void fetchingMessagesFromDB_ByUserId_ReturnsAllUserIdsMessages() {
         long userId = 1L;
@@ -70,24 +68,24 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
                 .verify();
     }
 
-//     @Order(3)
-//     @Test
-//     void fetchingMessagesFromDB_ByChatroomId_ReturnsAllMessages() {
-//         long chatroomId = 2L;
-        
-//         Mono<List<Message>> chatroomMessages = messageService.findMessagesByChatroomId(chatroomId)
-//                 .collectList();
 
-//         StepVerifier.create(chatroomMessages)
-//                 .assertNext(messagesList -> {
-//                         assertFalse(messagesList.isEmpty(), "This list of messages should not be empty");
-//                         messagesList.forEach(message -> {
-//                                 assertEquals(message.chatroomId(), chatroomId);
-//                         });
-//                 })
-//                 .expectComplete()
-//                 .verify();
-//     }
+     @Test
+     void fetchingMessagesFromDB_ByChatroomId_ReturnsAllMessages() {
+         long chatroomId = 2L;
+        
+         Mono<List<Message>> chatroomMessages = messageService.findMessagesByChatroomId(chatroomId)
+                 .collectList();
+
+         StepVerifier.create(chatroomMessages)
+                 .assertNext(messagesList -> {
+                         assertFalse(messagesList.isEmpty(), "This list of messages should not be empty");
+                         messagesList.forEach(message -> {
+                                 assertEquals(message.chatroomId(), chatroomId);
+                         });
+                 })
+                 .expectComplete()
+                 .verify();
+     }
 
     
     @Test
