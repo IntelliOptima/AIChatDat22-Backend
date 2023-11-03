@@ -8,4 +8,5 @@ import reactor.core.publisher.Flux;
 @Repository
 public interface MessageRepository extends R2dbcRepository<Message, Long> {
     Flux<Message> findAllByUserId(long userId);
+    Flux<Message> findAllByChatroomId(long chatroomId);
 }

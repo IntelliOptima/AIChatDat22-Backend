@@ -11,7 +11,10 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -20,6 +23,13 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
 
     @Autowired
     private IMessageService messageService;
+
+
+    void addMessagesToDbForTest() {
+        IntStream.range(0, 10).forEach(i -> {
+            messageService.saveMessage(Message.of(1, "Test", 2));
+        });
+    }
 
     @Test
     void createMessageWithService_ReturnsNewCreatedMessage() {
@@ -67,7 +77,24 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
     }
 
     @Test
+    void fetchingMessagesFromDb_ByChatroomId() {
+        long chatroomId = 2L;
+
+        Mono<List<Message>> chatroomMessages = messageService.findMessagesByChatroomId(chatroomId).collectList();
+
+        StepVerifier.create(chatroomMessages)
+                .assertNext(messages -> {
+                    assertFalse(messages.isEmpty(), "The list should not be empty");
+                    messages.forEach(message -> {
+                        assertEquals(message.chatroomId(), chatroomId);
+                    });
+                })
+                .verifyComplete();
+    }
+
+    @Test
     void testDeleteMessageByIdSuccess() {
+        addMessagesToDbForTest();
         long userId = 1L;
         long messageId = 1L;
 
@@ -91,7 +118,6 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
                         "Deleted message should not be in the list"))
                 .verifyComplete();
     }
-
 
 
 }

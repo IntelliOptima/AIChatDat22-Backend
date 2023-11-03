@@ -1,6 +1,7 @@
 package com.example.aichatprojectdat.message.service;
 
 
+
 import com.example.aichatprojectdat.message.model.Message;
 
 import reactor.core.publisher.Flux;
@@ -15,4 +16,6 @@ public interface IMessageService {
     Mono<Message> findById(long messageId);
 
     Mono<Void> deleteById(long messageId);
+
+    Flux<Message> findMessagesByChatroomId(long chatroomId);
 }

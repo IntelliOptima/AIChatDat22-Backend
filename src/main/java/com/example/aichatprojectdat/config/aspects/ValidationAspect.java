@@ -1,11 +1,11 @@
-package com.example.aichatprojectdat.aspects;
+package com.example.aichatprojectdat.config.aspects;
 
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 import org.aspectj.lang.annotation.Pointcut;
 
-import com.example.aichatprojectdat.aspects.AdviceExeptions.NullArgumentException;
+import com.example.aichatprojectdat.config.aspects.AdviceExeptions.NullArgumentException;
 
 @Aspect
 public class ValidationAspect {
