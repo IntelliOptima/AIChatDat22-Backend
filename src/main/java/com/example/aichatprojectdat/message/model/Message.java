@@ -17,21 +17,18 @@ public record Message(
         @Id
         Long id,
         
-        long userId,
+        Long userId,
 
         @NotNull
         String message,
 
-        long chatroomId,
+        Long chatroomId,
 
         @CreatedDate
-        Instant createdDate,
-
-        @LastModifiedDate
-        Instant lastModifiedDate
+        Instant createdDate
 ) {
         @ValidateParams
-        public static Message of(long userId, String message, long chatroomId) {
-                return new Message(null, userId, message, chatroomId, null, null);
+        public static Message of(Long userId, String message, Long chatroomId) {
+                return new Message(null, userId, message, chatroomId, null);
         }
 }
