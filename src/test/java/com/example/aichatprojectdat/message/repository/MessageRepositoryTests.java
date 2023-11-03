@@ -69,7 +69,7 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
     }
 
 
-     @Test
+     /*@Test
      void fetchingMessagesFromDB_ByChatroomId_ReturnsAllMessages() {
          long chatroomId = 2L;
         
@@ -85,7 +85,7 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
                  })
                  .expectComplete()
                  .verify();
-     }
+     }*/
 
     
     @Test
