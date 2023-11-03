@@ -4,6 +4,8 @@ import com.example.aichatprojectdat.message.model.Message;
 import com.example.aichatprojectdat.message.repository.MessageRepository;
 import lombok.RequiredArgsConstructor;
 
+import java.util.List;
+
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -15,6 +17,7 @@ import reactor.core.publisher.Mono;
 public class MessageService implements IMessageService {
 
     private final MessageRepository messageRepository;
+    
     @Override
     public Mono<Message> saveMessage(Message of) {
         return messageRepository.save(of);
@@ -34,4 +37,11 @@ public class MessageService implements IMessageService {
     public Mono<Void> deleteById(long messageId) {
         return messageRepository.deleteById(messageId);
     }
+
+    @Override
+    public Flux<Message> findMessagesByChatroomId(long chatroomId) {
+        return messageRepository.findAllByChatroomId(chatroomId);
+    }
+
+    
 }

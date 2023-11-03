@@ -8,7 +8,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.relational.core.mapping.Table;
 
-import com.example.aichatprojectdat.aspects.AdviceAnnotations.ValidateParams;
+import com.example.aichatprojectdat.config.aspects.AdviceAnnotations.ValidateParams;
 
 import jakarta.validation.constraints.NotNull;
 
@@ -16,9 +16,12 @@ import jakarta.validation.constraints.NotNull;
 public record Message(
         @Id
         Long id,
+        
         long userId,
+
         @NotNull
         String message,
+
         long chatroomId,
 
         @CreatedDate
