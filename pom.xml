@@ -123,6 +123,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-websocket</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.rsocket</groupId>
+            <artifactId>rsocket-core</artifactId>
+            <version>1.1.4</version>
+        </dependency>
     </dependencies>
 
     <build>
