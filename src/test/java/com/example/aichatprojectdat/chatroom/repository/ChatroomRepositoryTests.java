@@ -49,7 +49,7 @@ public class ChatroomRepositoryTests extends AbstractIntegrationTest {
        users.add(userService.create(User.of("Oliver@hotmail.com", "Oliver")).block());
     }
 
-    @Order(1)
+
     @Test
     void whenChatroomCreated_ChatroomSavedInDB_AndUserRelationCreated_ReturnChatroomAndRelation() {
         User user = users.get(0);
@@ -78,7 +78,6 @@ public class ChatroomRepositoryTests extends AbstractIntegrationTest {
                 .verifyComplete();
     }
 
-    @Order(2)
     @Test
     void whenChatroomFetchedFromDb_AddUsersToChatroomAndStoreInDB_ReturnChatroomUsersRelation() {
         // Create a new chatroom for this specific test to avoid ID conflicts
