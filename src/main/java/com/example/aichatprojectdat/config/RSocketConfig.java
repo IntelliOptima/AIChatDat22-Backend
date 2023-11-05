@@ -4,6 +4,8 @@ import io.rsocket.frame.decoder.PayloadDecoder;
 import org.springframework.boot.rsocket.server.RSocketServerCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.codec.json.Jackson2JsonDecoder;
+import org.springframework.http.codec.json.Jackson2JsonEncoder;
 import org.springframework.messaging.rsocket.RSocketStrategies;
 import org.springframework.messaging.rsocket.annotation.support.RSocketMessageHandler;
 import org.springframework.util.MimeTypeUtils;
@@ -20,6 +22,8 @@ public class RSocketConfig {
                 .metadataExtractorRegistry(registry -> {
                             registry.metadataToExtract(MimeTypeUtils.APPLICATION_JSON, Map.class, "headers");
                 })
+                .decoder(new Jackson2JsonDecoder())
+                .encoder(new Jackson2JsonEncoder())
                 .build();
     }
 
