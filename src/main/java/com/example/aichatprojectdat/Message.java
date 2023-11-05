@@ -23,9 +23,13 @@ public class Message {
         @GeneratedValue(strategy = GenerationType.AUTO)
         private Long id;
 
+        private String userName; 
+        
         private String message;
 
         private Long sent = Instant.now().getEpochSecond();
 
 
+        public Message(String user1, String s) {
+        }
 }
