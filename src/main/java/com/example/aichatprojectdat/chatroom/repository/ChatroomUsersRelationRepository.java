@@ -8,5 +8,5 @@ import reactor.core.publisher.Flux;
 @Repository
 public interface ChatroomUsersRelationRepository extends R2dbcRepository<ChatroomUsersRelation, Long> {
 
-    Flux<ChatroomUsersRelation> findAllById(Long id);
+    Flux<ChatroomUsersRelation> findAllByChatroomId(Long chatroomId);
 }

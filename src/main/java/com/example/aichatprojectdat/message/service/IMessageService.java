@@ -9,7 +9,7 @@ import reactor.core.publisher.Mono;
 
 public interface IMessageService {
 
-    Mono<Message> saveMessage(Message of);
+    Mono<Message> create(Message of);
 
     Flux<Message> findAllByUserId(long userId);
 

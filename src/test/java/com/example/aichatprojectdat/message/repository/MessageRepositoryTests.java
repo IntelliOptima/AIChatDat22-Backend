@@ -7,14 +7,11 @@ import com.example.aichatprojectdat.message.model.Message;
 import com.example.aichatprojectdat.message.service.IMessageService;
 import com.example.aichatprojectdat.user.model.User;
 import com.example.aichatprojectdat.user.service.IUserService;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.data.r2dbc.DataR2dbcTest;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import org.springframework.test.annotation.DirtiesContext;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -26,7 +23,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 
 @SpringBootTest
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 public class MessageRepositoryTests extends AbstractIntegrationTest {
 
     @Autowired
@@ -45,13 +41,13 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
     @BeforeEach
     void createChatRoom() {
         testUser = userService.create(User.of("test@email.com", "HASHAN")).block();
-        testChatroom = chatroomService.create(Chatroom.of(testUser.id())).block();
+        testChatroom = chatroomService.create(Chatroom.builder().chatroomUserCreatorId(testUser.id()).build()).block();
     }
 
 
     void addMessagesToDbForTest() {
         IntStream.range(0, 10).forEach(i -> {
-            messageService.saveMessage(Message.of(testUser.id(), "Test", testChatroom.id())).block();
+            messageService.create(Message.of(testUser.id(), "Test", testChatroom.getId())).block();
         });
     }
 
@@ -59,9 +55,9 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
     void createMessageWithService_ReturnsNewCreatedMessage() {
         long userId = testUser.id();
         String mockMessage = "Test message";
-        long chatroomId = testChatroom.id();
+        long chatroomId = testChatroom.getId();
 
-        Mono<Message> messageMono = messageService.saveMessage(Message.of(userId, mockMessage, chatroomId));
+        Mono<Message> messageMono = messageService.create(Message.of(userId, mockMessage, chatroomId));
 
         StepVerifier.create(messageMono)
                 .consumeNextWith(message -> {
@@ -77,9 +73,9 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
     void fetchingMessagesFromDB_ByUserId_ReturnAllUserIdsMessages() {
         long userId = testUser.id();
         String mockMessage = "Test message";
-        long chatroomId = testChatroom.id();
+        long chatroomId = testChatroom.getId();
 
-        Mono<Message> saveOperation = messageService.saveMessage(Message.of(userId, mockMessage, chatroomId));
+        Mono<Message> saveOperation = messageService.create(Message.of(userId, mockMessage, chatroomId));
 
         // Ensure findAllByUserId is chained after the save operation completes
         Mono<List<Message>> messagesListMono = saveOperation
@@ -102,7 +98,7 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
     @Test
     void fetchingMessagesFromDb_ByChatroomId() {
         addMessagesToDbForTest();
-        long chatroomId = testChatroom.id();
+        long chatroomId = testChatroom.getId();
 
         Mono<List<Message>> chatroomMessages = messageService.findMessagesByChatroomId(chatroomId).collectList();
 

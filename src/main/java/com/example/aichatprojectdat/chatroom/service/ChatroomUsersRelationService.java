@@ -21,7 +21,7 @@ public class ChatroomUsersRelationService implements IChatRoomUsersRelationServi
     }
 
     @Override
-    public Flux<ChatroomUsersRelation> findAllByChatroomId(Long id) {
-        return chatroomUsersRelationRepository.findAllById(id);
+    public Flux<ChatroomUsersRelation> findAllByChatroomId(Long chatroomId) {
+        return chatroomUsersRelationRepository.findAllByChatroomId(chatroomId);
     }
 }

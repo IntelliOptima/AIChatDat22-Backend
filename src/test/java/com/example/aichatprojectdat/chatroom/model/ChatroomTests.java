@@ -11,9 +11,9 @@ public class ChatroomTests {
     void whenCreatingNewChatroom_ReturnChatroomWithCreatorId() {
         long chatroomUserCreatorId = 1L;
 
-        Chatroom chatroom = Chatroom.of(chatroomUserCreatorId);
-        assertNull(chatroom.id(), "Id should be handled by Database, and always be null on creation");
-        assertNull(chatroom.createdDate(), "Id should be handled by Database, and always be null on creation");
-        assertEquals(chatroom.chatroomUserCreatorId(), chatroomUserCreatorId, "ChatroomUserCreatorId should be equal to the user that creates id");
+        Chatroom chatroom = Chatroom.builder().chatroomUserCreatorId(chatroomUserCreatorId).build();
+        assertNull(chatroom.getId(), "Id should be handled by Database, and always be null on creation");
+        assertNull(chatroom.getCreatedDate(), "Id should be handled by Database, and always be null on creation");
+        assertEquals(chatroom.getChatroomUserCreatorId(), chatroomUserCreatorId, "ChatroomUserCreatorId should be equal to the user that creates id");
     }
 }

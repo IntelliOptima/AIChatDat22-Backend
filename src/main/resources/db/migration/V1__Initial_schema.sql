@@ -2,36 +2,22 @@ CREATE TABLE user
 (
     id                          INT AUTO_INCREMENT PRIMARY KEY,
     email                       VARCHAR(100) NOT NULL,
-    full_name                   VARCHAR(100) NOT NULL
+    full_name                   VARCHAR(100) NOT NULL,
+    created_date                TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
+    last_modified_date          TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
+    version                     INT
 );
-
-
 
 CREATE TABLE chatroom (
   id                            INT AUTO_INCREMENT PRIMARY KEY,
   chatroom_user_creator_id      INT,
   created_date                  TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
+  last_modified_date            TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
+  version                       INT,
 
     CONSTRAINT fk_ChatroomUser
     FOREIGN KEY (chatroom_user_creator_id)
     REFERENCES user (id)
-);
-
-
-CREATE TABLE message (
-  id                          INT AUTO_INCREMENT PRIMARY KEY,
-  user_id                     INT,
-  message                     TEXT NOT NULL,
-  chatroom_id                 INT NOT NULL,
-  created_date                TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
-
-    -- CONSTRAINT fk_UserMessage
-    -- FOREIGN KEY (user_id)
-    -- REFERENCES users (id)
-
-    CONSTRAINT fk_ChatroomMessage
-        FOREIGN KEY (chatroom_id)
-        REFERENCES chatroom (id)
 );
 
 
@@ -48,3 +34,24 @@ CREATE TABLE chatroom_users_relation (
         FOREIGN KEY (user_id)
         REFERENCES user (id)
 );
+
+
+CREATE TABLE message (
+  id                            INT AUTO_INCREMENT PRIMARY KEY,
+  user_id                       INT,
+  message                       TEXT NOT NULL,
+  chatroom_id                   INT NOT NULL,
+  created_date                  TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
+  last_modified_date            TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
+  version                       INT,
+
+    CONSTRAINT fk_UserMessage
+      FOREIGN KEY (user_id)
+      REFERENCES user (id),
+
+    CONSTRAINT fk_ChatroomMessage
+        FOREIGN KEY (chatroom_id)
+        REFERENCES chatroom (id)
+);
+
+
