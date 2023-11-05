@@ -4,8 +4,6 @@ import com.example.aichatprojectdat.message.model.Message;
 import com.example.aichatprojectdat.message.repository.MessageRepository;
 import lombok.RequiredArgsConstructor;
 
-import java.util.List;
-
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -14,12 +12,12 @@ import reactor.core.publisher.Mono;
 @Service
 @Primary
 @RequiredArgsConstructor
-public class MessageService implements IMessageService {
+public class MessageServiceImpl implements IMessageService {
 
     private final MessageRepository messageRepository;
     
     @Override
-    public Mono<Message> saveMessage(Message of) {
+    public Mono<Message> create(Message of) {
         return messageRepository.save(of);
     }
 
