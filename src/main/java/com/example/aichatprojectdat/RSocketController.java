@@ -1,4 +1,4 @@
-package com.example.aichatprojectdat.chatroom.controller;
+package com.example.aichatprojectdat;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.MessageMapping;
