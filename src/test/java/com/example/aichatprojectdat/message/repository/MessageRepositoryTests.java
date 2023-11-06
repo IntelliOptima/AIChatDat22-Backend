@@ -80,7 +80,7 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
 
         // Ensure findAllByUserId is chained after the save operation completes
         Mono<List<Message>> messagesListMono = saveOperation
-                .thenMany(messageService.getMessageById(userId))
+                .thenMany(messageService.getAllMessagesByUserId(userId))
                 .collectList();
 
         StepVerifier.create(messagesListMono)
