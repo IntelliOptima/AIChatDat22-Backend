@@ -18,18 +18,17 @@ import org.springframework.data.annotation.Id;
 @NoArgsConstructor
 public class Message {
 
-
         @Id
         @GeneratedValue(strategy = GenerationType.AUTO)
         private Long id;
 
-        private String userName; 
-        
+        private String userName;
         private String message;
-
         private Long sent = Instant.now().getEpochSecond();
 
-
-        public Message(String user1, String s) {
+        public Message(String userName, String message, Long sent) {
+                this.userName = userName;
+                this.message = message;
+                this.sent = sent;
         }
 }
