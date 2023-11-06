@@ -24,4 +24,11 @@ public class ChatroomUsersRelationService implements IChatRoomUsersRelationServi
     public Flux<ChatroomUsersRelation> findAllByChatroomId(Long chatroomId) {
         return chatroomUsersRelationRepository.findAllByChatroomId(chatroomId);
     }
+
+    @Override
+    public Mono<Boolean> isUserPartOfChatroom(Long userId, Long chatroomId) {
+        return chatroomUsersRelationRepository.findByUserIdAndChatroomId(userId, chatroomId)
+                .map(chatroomUserRelation -> true)
+                .defaultIfEmpty(false);
+    }
 }
