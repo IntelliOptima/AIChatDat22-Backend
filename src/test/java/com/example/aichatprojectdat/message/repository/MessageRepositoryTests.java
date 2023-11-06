@@ -24,7 +24,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 
 @SpringBootTest
-@Transactional
 public class MessageRepositoryTests extends AbstractIntegrationTest {
 
     @Autowired
