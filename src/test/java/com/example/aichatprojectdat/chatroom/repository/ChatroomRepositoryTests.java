@@ -44,11 +44,11 @@ public class ChatroomRepositoryTests extends AbstractIntegrationTest {
 
     @BeforeEach
     void createUserForChatroom() {
-       users.clear();
-       users.add(userService.create(User.of("Alexander@hotmail.com", "Alexander Bø")).block());
-       users.add(userService.create(User.of("Alex@hotmail.com", "Holmberg")).block());
-       users.add(userService.create(User.of("Mikkel@hotmail.com", "Mikkel Fun")).block());
-       users.add(userService.create(User.of("Oliver@hotmail.com", "Oliver")).block());
+        users.clear();
+        users.add(userService.create(User.of("Alexander@hotmail.com", "Alexander Bø")).block());
+        users.add(userService.create(User.of("Alex@hotmail.com", "Holmberg")).block());
+        users.add(userService.create(User.of("Mikkel@hotmail.com", "Mikkel Fun")).block());
+        users.add(userService.create(User.of("Oliver@hotmail.com", "Oliver")).block());
     }
 
 
@@ -81,6 +81,36 @@ public class ChatroomRepositoryTests extends AbstractIntegrationTest {
                 })
                 .verifyComplete();
     }
+
+
+    @Test
+    void whenCreatingChatroom_ThenCreateChatroomRelationAndStoreInDB_ReturnChatroomUsersRelation() {
+        User creator = users.get(0); // The user who will be the creator of the chatroom.
+
+        Mono<Chatroom> chatroomMono = chatroomService.create(
+                Chatroom.builder()
+                        .chatroomUserCreatorId(creator.id())
+                        .build());
+
+        // We use Mono.zip when we want to do something with both results, in this case, just to hold the chatroomId.
+        Mono<Tuple2<Chatroom, ChatroomUsersRelation>> resultMono = chatroomMono.flatMap(createdChatroom ->
+                chatRoomUsersRelationService.create(ChatroomUsersRelation.of(
+                                createdChatroom.getId(),
+                                creator.id()))
+                        .map(chatroomUsersRelation -> Tuples.of(createdChatroom, chatroomUsersRelation))
+        );
+
+        StepVerifier.create(resultMono)
+                .assertNext(objects -> {
+                    Chatroom createdChatroom = objects.getT1();
+                    ChatroomUsersRelation chatroomUsersRelation = objects.getT2();
+
+                    assertEquals(createdChatroom.getId(), chatroomUsersRelation.chatroomId());
+                    assertEquals(creator.id(), chatroomUsersRelation.userId());
+                })
+                .verifyComplete();
+    }
+
 
     @Test
     void whenChatroomFetchedFromDb_AddUsersToChatroomAndStoreInDB_ReturnChatroomUsersRelation() {

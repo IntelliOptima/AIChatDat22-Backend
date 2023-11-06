@@ -14,7 +14,7 @@ public abstract class AbstractIntegrationTest {
 
     // Define your MySQL container (it will be shared between test classes)
     //@Container
-    private static MySQLContainer<?> mySQLContainer = new MySQLContainer<>(DockerImageName.parse("mysql:latest"));
+    private static final MySQLContainer<?> mySQLContainer = new MySQLContainer<>(DockerImageName.parse("mysql:latest"));
 
     @DynamicPropertySource
     static void dynamicProperties(DynamicPropertyRegistry registry) {
