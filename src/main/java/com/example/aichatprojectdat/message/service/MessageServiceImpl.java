@@ -34,6 +34,16 @@ public class MessageServiceImpl implements IMessageService {
     }
 
     @Override
+    public Mono<Void> deleteById(long messageId) {
+        return messageRepository.deleteById(messageId);
+    }
+
+    @Override
+    public Flux<Message> getAllMessagesByUserId(long userId) {
+        return messageRepository.findAllByUserId(userId);
+    }
+
+    @Override
     public Flux<Message> getMessages() {
         return messageRepository.findAll().delayElements(Duration.ofMillis(100)).map(message -> {
             if (message.id() > 20 && message.id() < 30) throw new RuntimeException();

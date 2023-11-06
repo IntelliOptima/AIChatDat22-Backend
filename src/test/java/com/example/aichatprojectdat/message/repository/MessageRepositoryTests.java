@@ -79,7 +79,7 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
 
         // Ensure findAllByUserId is chained after the save operation completes
         Mono<List<Message>> messagesListMono = saveOperation
-                .thenMany(messageService.findAllByUserId(userId))
+                .thenMany(messageService.getMessageById(userId))
                 .collectList();
 
         StepVerifier.create(messagesListMono)
@@ -100,7 +100,7 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
         addMessagesToDbForTest();
         long chatroomId = testChatroom.getId();
 
-        Mono<List<Message>> chatroomMessages = messageService.findMessagesByChatroomId(chatroomId).collectList();
+        Mono<List<Message>> chatroomMessages = messageService.getMessagesByChatroomId(chatroomId).collectList();
 
         StepVerifier.create(chatroomMessages)
                 .assertNext(messages -> {
@@ -119,7 +119,7 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
         long messageId = 1L;
 
         // First ensure the message is there
-        StepVerifier.create(messageService.findById(messageId))
+        StepVerifier.create(messageService.getMessageById(messageId))
                 .expectNextMatches(message -> message.id() == messageId)
                 .verifyComplete();
 
@@ -128,7 +128,7 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
                 .verifyComplete();
 
         // Fetch all messages for the user and ensure the deleted message is not among them
-        Mono<List<Message>> messagesListMinusDeleted = messageService.findAllByUserId(userId)
+        Mono<List<Message>> messagesListMinusDeleted = messageService.getAllMessagesByUserId(userId)
                 .filter(message -> message.id() != messageId) // This ensures we don't get the deleted message
                 .collectList();
 
