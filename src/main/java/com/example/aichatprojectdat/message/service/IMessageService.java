@@ -9,13 +9,11 @@ import reactor.core.publisher.Mono;
 
 public interface IMessageService {
 
-    Mono<Message> create(Message of);
+    Mono<Message> create(Message message);
 
-    Flux<Message> findAllByUserId(long userId);
+    Mono<Message> getMessageById(Long messageId);
 
-    Mono<Message> findById(long messageId);
+    Flux<Message> getMessages();
 
-    Mono<Void> deleteById(long messageId);
-
-    Flux<Message> findMessagesByChatroomId(long chatroomId);
+    Flux<Message> getMessagesByChatroomId(Long chatroomId);
 }
