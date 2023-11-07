@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Logger;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -45,26 +46,33 @@ public class ChatroomController {
             Flux<String> messages,
             RSocketRequester requester
     ) {
-        // For testing, we are simply logging the message and returning it in the response
-        // without any user validation or processing.
-        return messages.map(message -> {
-            log.info("Received message: {}", message);
-            return "Server: " + message;
-        });
 
-//        return messages.flatMap(message -> {
-//            Long userId = message.userId();
-//            return chatRoomUsersRelationService.isUserPartOfChatroom(userId, chatroomId)
-//                    .flatMapMany(userRelationExist -> {
-//                        if (userRelationExist) {
-//                            subscribers.computeIfAbsent(chatroomId, id -> new ArrayList<>()).add(requester);
-//                            return Flux.just(ResponseEntity.ok(message));
-//                        } else {
-//                            return Flux.just(ResponseEntity.badRequest().body(Message.empty()));
-//                        }
-//                    });
-//        });
+        return messages.doOnNext(message -> {
+            System.out.println("From User: " + message);
+            requester.route("chat."+chatroomId, message);
+        });
     }
+
+//    @MessageMapping("chat.{chatroomId}")
+//    public Flux<Message> chatroom (
+//            @DestinationVariable String chatroomId,
+//            Flux<Message> messages,
+//            RSocketRequester requester
+//    ) {
+//
+////        return messages.flatMap(message -> {
+////            Long userId = message.userId();
+////            return chatRoomUsersRelationService.isUserPartOfChatroom(userId, chatroomId)
+////                    .flatMapMany(userRelationExist -> {
+////                        if (userRelationExist) {
+////                            subscribers.computeIfAbsent(chatroomId, id -> new ArrayList<>()).add(requester);
+////                            return Flux.just(ResponseEntity.ok(message));
+////                        } else {
+////                            return Flux.just(ResponseEntity.badRequest().body(Message.empty()));
+////                        }
+////                    });
+////        });
+//    }
 
 
 
