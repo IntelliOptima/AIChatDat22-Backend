@@ -24,6 +24,7 @@ import reactor.util.function.Tuples;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -55,13 +56,17 @@ public class ChatroomRepositoryTests extends AbstractIntegrationTest {
     @Test
     void whenChatroomCreated_ChatroomSavedInDB_AndUserRelationCreated_ReturnChatroomAndRelation() {
         User user = users.get(0);
-        // Create the chatroom and then create the ChatroomUsersRelation using flatMap
-        Mono<Tuple2<Chatroom, ChatroomUsersRelation>> resultMono = chatroomService.create(Chatroom.builder()
-                        .chatroomUserCreatorId(user.id()).build())
 
-                .flatMap(chatroom ->
-                        chatRoomUsersRelationService.create(ChatroomUsersRelation.of(chatroom.getId(), user.id()))
-                                .map(relation -> Tuples.of(chatroom, relation)) // Combine the chatroom and relation into a Tuple
+        // Create the chatroom and then create the ChatroomUsersRelation using flatMap
+            Mono<Tuple2<Chatroom, ChatroomUsersRelation>> resultMono = chatroomService.create(Chatroom.builder()
+                            .id(UUID.randomUUID().toString())
+                            .chatroomUserCreatorId(user.id()).build())
+
+                .flatMap(chatroom -> {
+                    System.out.println(chatroom.getId());
+                            return chatRoomUsersRelationService.create(ChatroomUsersRelation.of(chatroom.getId(), user.id()))
+                                    .map(relation -> Tuples.of(chatroom, relation));
+                        } // Combine the chatroom and relation into a Tuple
                 );
 
         // Use StepVerifier to test the composed mono
@@ -89,6 +94,7 @@ public class ChatroomRepositoryTests extends AbstractIntegrationTest {
 
         Mono<Chatroom> chatroomMono = chatroomService.create(
                 Chatroom.builder()
+                        .id(UUID.randomUUID().toString())
                         .chatroomUserCreatorId(creator.id())
                         .build());
 
@@ -116,6 +122,7 @@ public class ChatroomRepositoryTests extends AbstractIntegrationTest {
     void whenChatroomFetchedFromDb_AddUsersToChatroomAndStoreInDB_ReturnChatroomUsersRelation() {
         // Create a new chatroom for this specific test to avoid ID conflicts
         Chatroom chatroom = chatroomService.create(Chatroom.builder()
+                        .id(UUID.randomUUID().toString())
                 .chatroomUserCreatorId(users.get(0).id()).build()).block();
         assertNotNull(chatroom); // Ensure the chatroom was created
 

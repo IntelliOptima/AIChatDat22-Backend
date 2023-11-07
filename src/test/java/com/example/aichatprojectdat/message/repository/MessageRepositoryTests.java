@@ -18,6 +18,7 @@ import reactor.test.StepVerifier;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -42,7 +43,12 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
     @BeforeEach
     void createChatRoom() {
         testUser = userService.create(User.of("test@email.com", "HASHAN")).block();
-        testChatroom = chatroomService.create(Chatroom.builder().chatroomUserCreatorId(testUser.id()).build()).block();
+        testChatroom = chatroomService.create(
+                Chatroom.builder()
+                        .id(UUID.randomUUID().toString())
+                        .chatroomUserCreatorId(testUser.id())
+                        .build())
+                .block();
     }
 
 

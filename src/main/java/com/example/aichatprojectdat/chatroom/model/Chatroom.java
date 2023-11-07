@@ -21,7 +21,7 @@ import java.util.UUID;
 public class Chatroom {
 
     @Id
-    private String id = UUID.randomUUID().toString();
+    private String id = UUID.randomUUID().toString(); //Important that this gets instantiated as an UUID()
 
     private Long chatroomUserCreatorId;
 
