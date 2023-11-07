@@ -56,7 +56,7 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
     void createMessageWithService_ReturnsNewCreatedMessage() {
         long userId = testUser.id();
         String mockMessage = "Test message";
-        long chatroomId = testChatroom.getId();
+        String chatroomId = testChatroom.getId();
 
         Mono<Message> messageMono = messageService.create(Message.of(userId, mockMessage, chatroomId));
 
@@ -74,7 +74,7 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
     void fetchingMessagesFromDB_ByUserId_ReturnAllUserIdsMessages() {
         long userId = testUser.id();
         String mockMessage = "Test message";
-        long chatroomId = testChatroom.getId();
+        String chatroomId = testChatroom.getId();
 
         Mono<Message> saveOperation = messageService.create(Message.of(userId, mockMessage, chatroomId));
 
@@ -89,7 +89,7 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
                     messagesList.forEach(message -> {
                         assertEquals(userId, message.userId(), "User ID should match");
                         assertTrue(message.createdDate().isBefore(Instant.now()), "Created date should be in the past");
-                        assertTrue(message.chatroomId() > 0, "Chatroom ID should be positive");
+                        assertFalse(message.chatroomId().isEmpty(), "Chatroom ID shold not be empty -  UUID");
                     });
                 })
                 .expectComplete()
@@ -99,7 +99,7 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
     @Test
     void fetchingMessagesFromDb_ByChatroomId() {
         addMessagesToDbForTest();
-        long chatroomId = testChatroom.getId();
+        String chatroomId = testChatroom.getId();
 
         Mono<List<Message>> chatroomMessages = messageService.getMessagesByChatroomId(chatroomId).collectList();
 

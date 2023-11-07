@@ -6,6 +6,6 @@ import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 
 @Repository
-public interface ChatroomRepository extends R2dbcRepository<Chatroom, Long> {
+public interface ChatroomRepository extends R2dbcRepository<Chatroom, String> {
     Flux<Chatroom> findAllByChatroomUserCreatorId(Long creatorId);
 }

@@ -22,7 +22,7 @@ public record Message(
 
         String message,
 
-        Long chatroomId,
+        String chatroomId,
 
         @CreatedDate
         Instant createdDate,
@@ -33,7 +33,7 @@ public record Message(
         @Version
         Long version
 ) {
-        public static Message of(Long userId, String message, Long chatroomId ){
+        public static Message of(Long userId, String message, String chatroomId ){
                 return new Message(null, userId, message, chatroomId, null, null, null);
         }
 

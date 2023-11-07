@@ -21,12 +21,12 @@ public class ChatroomUsersRelationService implements IChatRoomUsersRelationServi
     }
 
     @Override
-    public Flux<ChatroomUsersRelation> findAllByChatroomId(Long chatroomId) {
+    public Flux<ChatroomUsersRelation> findAllByChatroomId(String chatroomId) {
         return chatroomUsersRelationRepository.findAllByChatroomId(chatroomId);
     }
 
     @Override
-    public Mono<Boolean> isUserPartOfChatroom(Long userId, Long chatroomId) {
+    public Mono<Boolean> isUserPartOfChatroom(Long userId, String chatroomId) {
         return chatroomUsersRelationRepository.findByUserIdAndChatroomId(userId, chatroomId)
                 .map(chatroomUserRelation -> true)
                 .defaultIfEmpty(false);

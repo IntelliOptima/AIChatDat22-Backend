@@ -60,7 +60,7 @@ public class ChatroomRepositoryTests extends AbstractIntegrationTest {
                         .chatroomUserCreatorId(user.id()).build())
 
                 .flatMap(chatroom ->
-                        chatRoomUsersRelationService.create(ChatroomUsersRelation.of(user.id(), chatroom.getId()))
+                        chatRoomUsersRelationService.create(ChatroomUsersRelation.of(chatroom.getId(), user.id()))
                                 .map(relation -> Tuples.of(chatroom, relation)) // Combine the chatroom and relation into a Tuple
                 );
 
@@ -120,7 +120,7 @@ public class ChatroomRepositoryTests extends AbstractIntegrationTest {
         assertNotNull(chatroom); // Ensure the chatroom was created
 
         // Here we assume chatroom IDs are generated correctly by the service/database
-        long chatroomId = chatroom.getId();
+        String chatroomId = chatroom.getId();
 
         Mono<Tuple2<Chatroom, List<ChatroomUsersRelation>>> resultMono = chatroomService.findById(chatroomId)
                 .flatMap(existingChatroom ->

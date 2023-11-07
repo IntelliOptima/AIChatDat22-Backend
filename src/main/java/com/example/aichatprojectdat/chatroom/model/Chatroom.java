@@ -11,6 +11,7 @@ import org.springframework.data.relational.core.mapping.Table;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Data
 @AllArgsConstructor
@@ -20,7 +21,7 @@ import java.util.List;
 public class Chatroom {
 
     @Id
-    private Long id;
+    private String id = UUID.randomUUID().toString();
 
     private Long chatroomUserCreatorId;
 

@@ -9,7 +9,7 @@ CREATE TABLE user
 );
 
 CREATE TABLE chatroom (
-  id                            INT AUTO_INCREMENT PRIMARY KEY,
+  id                            VARCHAR(36) NOT NULL PRIMARY KEY ,
   chatroom_user_creator_id      INT,
   created_date                  TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
   last_modified_date            TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
@@ -23,12 +23,12 @@ CREATE TABLE chatroom (
 
 CREATE TABLE chatroom_users_relation (
     id                          INT AUTO_INCREMENT PRIMARY KEY,
-    chatroom_id                 INT,
+    chatroom_id                 VARCHAR(36) NOT NULL,
     user_id                     INT,
 
     CONSTRAINT fk_ChatroomMessageRelation
         FOREIGN KEY (chatroom_id)
-        REFERENCES chatroom (id),
+        REFERENCES chatroom(id),
 
     CONSTRAINT fk_ChatroomUserRelation
         FOREIGN KEY (user_id)
@@ -40,7 +40,7 @@ CREATE TABLE message (
   id                            INT AUTO_INCREMENT PRIMARY KEY,
   user_id                       INT,
   message                       TEXT NOT NULL,
-  chatroom_id                   INT NOT NULL,
+  chatroom_id                   VARCHAR(36) NOT NULL,
   created_date                  TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
   last_modified_date            TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
   version                       INT,
