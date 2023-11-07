@@ -10,7 +10,8 @@ spring:
     name: aichatdat-backend
   rsocket:
     server:
-      port: 7000
+      port: 6565
+      transport: websocket
 
   lifecycle:
     timeout-per-shutdown-phase: 15s
