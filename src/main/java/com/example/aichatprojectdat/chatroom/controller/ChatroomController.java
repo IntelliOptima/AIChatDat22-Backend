@@ -36,22 +36,34 @@ public class ChatroomController {
 
     private final IChatRoomUsersRelationService chatRoomUsersRelationService;
     private final Map<String, List<RSocketRequester>> subscribers = new ConcurrentHashMap<>();
+    private final Map<String, Sinks.Many<Message>> chatroomSinks = new ConcurrentHashMap<>();
 
     //_______________________ RSOCKET -> CHANNEL _______________________________
 
 
     @MessageMapping("chat.{chatroomId}")
-    public Flux<String> chatroom (
+    public Flux<Message> handleChatMessage(
             @DestinationVariable String chatroomId,
-            Flux<String> messages,
+            Flux<Message> incomingMessages,
             RSocketRequester requester
     ) {
+        log.info("Connected to chatroom: {}", chatroomId);
 
-        return messages.doOnNext(message -> {
-            System.out.println("From User: " + message);
-            requester.route("chat."+chatroomId, message);
-        });
+        Sinks.Many<Message> sink = chatroomSinks.computeIfAbsent(
+                chatroomId, id -> Sinks.many().multicast().directAllOrNothing());
+
+        // Handle incoming messages and then return the live flux of messages for this chatroom
+        return incomingMessages
+                .flatMap(message -> messageService.create(message) // Save message reactively
+                        .doOnNext(sink::tryEmitNext) // On successful save, emit the message to the sink
+                        .onErrorResume(e -> {
+                            log.error("Error processing message: {}", e.getMessage());
+                            return Mono.empty();
+                        })
+                )
+                .thenMany(sink.asFlux()); // After processing the incoming messages, return the flux of broadcasted messages
     }
+
 
 //    @MessageMapping("chat.{chatroomId}")
 //    public Flux<Message> chatroom (
