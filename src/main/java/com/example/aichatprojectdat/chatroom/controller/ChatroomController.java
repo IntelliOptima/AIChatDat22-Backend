@@ -36,31 +36,36 @@ public class ChatroomController {
 
     private final IChatRoomUsersRelationService chatRoomUsersRelationService;
     private final Map<String, List<RSocketRequester>> subscribers = new ConcurrentHashMap<>();
-    private final Map<String, Sinks.Many<Message>> chatroomSinks = new ConcurrentHashMap<>();
+    private final Map<String, Sinks.Many<String>> chatroomSinks = new ConcurrentHashMap<>();
 
     //_______________________ RSOCKET -> CHANNEL _______________________________
 
 
     @MessageMapping("chat.{chatroomId}")
-    public Flux<Message> handleChatMessage(
+    public Flux<String> handleChatMessage(
             @DestinationVariable String chatroomId,
-            Flux<Message> incomingMessages,
+            Flux<String> incomingMessages,
             RSocketRequester requester
     ) {
         log.info("Connected to chatroom: {}", chatroomId);
 
-        Sinks.Many<Message> sink = chatroomSinks.computeIfAbsent(
+        Sinks.Many<String> sink = chatroomSinks.computeIfAbsent(
                 chatroomId, id -> Sinks.many().multicast().directAllOrNothing());
 
         // Handle incoming messages and then return the live flux of messages for this chatroom
         return incomingMessages
-                .flatMap(message -> messageService.create(message) // Save message reactively
+                .map(message -> {
+                            System.out.println("THI IS RECEIVED MSG: " + message);
+                            return message;
+                        }
+                    //messageService.create(Message.of(1L, message, chatroomId))
+                      //      .thenReturn(message)
+                ) // Save message reactively
                         .doOnNext(sink::tryEmitNext) // On successful save, emit the message to the sink
                         .onErrorResume(e -> {
                             log.error("Error processing message: {}", e.getMessage());
                             return Mono.empty();
                         })
-                )
                 .thenMany(sink.asFlux()); // After processing the incoming messages, return the flux of broadcasted messages
     }
 
