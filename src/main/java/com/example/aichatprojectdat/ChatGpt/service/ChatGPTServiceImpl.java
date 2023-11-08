@@ -7,6 +7,7 @@ import com.example.aichatprojectdat.ChatGpt.model.GptResponse;
 
 import org.mvnsearch.chatgpt.model.completion.chat.ChatCompletionRequest;
 import org.mvnsearch.chatgpt.model.completion.chat.ChatCompletionResponse;
+import org.mvnsearch.chatgpt.model.completion.chat.ChatMessage;
 import org.mvnsearch.chatgpt.spring.service.ChatGPTService;
 import org.springframework.context.annotation.Primary;
 import org.springframework.http.MediaType;
@@ -16,6 +17,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 
@@ -23,13 +25,10 @@ import java.util.List;
 @Service
 public class ChatGPTServiceImpl implements IChatGPTService {
 
-    private final ChatGPTService chatGPTService;
-
     private final WebClient webClient;
 
     public ChatGPTServiceImpl(WebClient.Builder webClientBuilder, ChatGPTService chatGPTService) {
         this.webClient = webClientBuilder.baseUrl("https://api.openai.com/v1/chat/completions").build();
-        this.chatGPTService = chatGPTService;
     }
 
     @Override
@@ -62,11 +61,6 @@ public class ChatGPTServiceImpl implements IChatGPTService {
                     }
                 })
                 .onErrorResume(throwable -> Mono.just(new ArrayList<>()));
-    }
-
-    public Flux<String> streamChat(String question) {
-        return chatGPTService.stream(ChatCompletionRequest.of(question))
-                .map(ChatCompletionResponse::getReplyText);
     }
 
 }
