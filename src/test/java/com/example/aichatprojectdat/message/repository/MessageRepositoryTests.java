@@ -12,12 +12,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import org.springframework.transaction.annotation.Transactional;
+
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -42,7 +43,12 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
     @BeforeEach
     void createChatRoom() {
         testUser = userService.create(User.of("test@email.com", "HASHAN")).block();
-        testChatroom = chatroomService.create(Chatroom.builder().chatroomUserCreatorId(testUser.id()).build()).block();
+        testChatroom = chatroomService.create(
+                Chatroom.builder()
+                        .id(UUID.randomUUID().toString())
+                        .chatroomUserCreatorId(testUser.id())
+                        .build())
+                .block();
     }
 
 
@@ -56,14 +62,14 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
     void createMessageWithService_ReturnsNewCreatedMessage() {
         long userId = testUser.id();
         String mockMessage = "Test message";
-        long chatroomId = testChatroom.getId();
+        String chatroomId = testChatroom.getId();
 
         Mono<Message> messageMono = messageService.create(Message.of(userId, mockMessage, chatroomId));
 
         StepVerifier.create(messageMono)
                 .consumeNextWith(message -> {
                     assertTrue(message.id() > 0);
-                    assertEquals(message.message(), mockMessage);
+                    assertEquals(message.textMessage(), mockMessage);
                     assertEquals(message.userId(), userId);
                     assertEquals(message.chatroomId(), chatroomId);
                 })
@@ -74,7 +80,7 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
     void fetchingMessagesFromDB_ByUserId_ReturnAllUserIdsMessages() {
         long userId = testUser.id();
         String mockMessage = "Test message";
-        long chatroomId = testChatroom.getId();
+        String chatroomId = testChatroom.getId();
 
         Mono<Message> saveOperation = messageService.create(Message.of(userId, mockMessage, chatroomId));
 
@@ -89,7 +95,7 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
                     messagesList.forEach(message -> {
                         assertEquals(userId, message.userId(), "User ID should match");
                         assertTrue(message.createdDate().isBefore(Instant.now()), "Created date should be in the past");
-                        assertTrue(message.chatroomId() > 0, "Chatroom ID should be positive");
+                        assertFalse(message.chatroomId().isEmpty(), "Chatroom ID shold not be empty -  UUID");
                     });
                 })
                 .expectComplete()
@@ -99,7 +105,7 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
     @Test
     void fetchingMessagesFromDb_ByChatroomId() {
         addMessagesToDbForTest();
-        long chatroomId = testChatroom.getId();
+        String chatroomId = testChatroom.getId();
 
         Mono<List<Message>> chatroomMessages = messageService.getMessagesByChatroomId(chatroomId).collectList();
 
