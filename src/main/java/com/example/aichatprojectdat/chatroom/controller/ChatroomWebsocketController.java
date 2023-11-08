@@ -11,6 +11,7 @@ import java.util.Date;
 
 @Controller
 public class ChatroomWebsocketController {
+
     @MessageMapping("/chat")
     @SendTo("/topic/messages")
     public OutputMessage send(Message message) {
