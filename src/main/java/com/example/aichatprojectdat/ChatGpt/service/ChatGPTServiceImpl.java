@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Primary
-
 @Service
 public class ChatGPTServiceImpl implements IChatGPTService{
 
@@ -34,7 +33,7 @@ public class ChatGPTServiceImpl implements IChatGPTService{
         gptRequest.setGptMessages(listMessages);
         gptRequest.setN(1); //Number of answers from GPT
         gptRequest.setTemperature(1); //0-2 How Creative is GPT
-        gptRequest.setMaxTokens(2); //Answer Length
+        gptRequest.setMaxTokens(1000); //Answer Length
         gptRequest.setStream(false);
         gptRequest.setPresencePenalty(1);
 
@@ -42,7 +41,7 @@ public class ChatGPTServiceImpl implements IChatGPTService{
 
         return webClient.post()
                 .contentType(MediaType.APPLICATION_JSON)
-                .headers(h -> h.setBearerAuth("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"))
+                .headers(h -> h.setBearerAuth(""))
                 .bodyValue(gptRequest)
                 .retrieve()
                 .bodyToMono(GptResponse.class)
@@ -55,4 +54,5 @@ public class ChatGPTServiceImpl implements IChatGPTService{
                 })
                 .onErrorResume(throwable -> Mono.just(new ArrayList<>()));
     }
+
 }

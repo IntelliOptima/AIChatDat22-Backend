@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
+import com.example.aichatprojectdat.ChatGpt.service.IChatGPTService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
@@ -37,6 +38,7 @@ import javax.swing.plaf.synth.SynthOptionPaneUI;
 @RequiredArgsConstructor
 public class ChatroomController {
     private final IMessageService messageService;
+    private final IChatGPTService chatGPTService;
 
     private final IChatRoomUsersRelationService chatRoomUsersRelationService;
     private final Map<String, List<RSocketRequester>> subscribers = new ConcurrentHashMap<>();
@@ -61,13 +63,25 @@ public class ChatroomController {
     // Method for clients to send messages to a chatroom
     @MessageMapping("chat.send.{chatroomId}")
     public void receiveMessage(@DestinationVariable String chatroomId, Message chatMessage, RSocketRequester requester) {
+
         System.out.println(chatMessage.textMessage());
         // Retrieve or create a new sink for the chatroom
         Sinks.Many<Message> sink = chatroomSinks.computeIfAbsent(chatroomId, id -> Sinks.many().replay().latest());
 
         // Emit the message to the sink
         sink.emitNext(chatMessage, Sinks.EmitFailureHandler.FAIL_FAST);
+
+        // Check if the message starts with "@gpt" and handle accordingly
+        if (chatMessage.textMessage().toLowerCase().startsWith("@gpt")) {
+            String question = chatMessage.textMessage().split("@gpt", 2)[1];
+            chatGPTService.getAnswerFromGPT(question)
+                    .subscribe(choices -> {
+                        Message gptMessage = Message.of(999L, choices.get(0).getGptMessage().getContent(), chatroomId);
+                        sink.emitNext(gptMessage, Sinks.EmitFailureHandler.FAIL_FAST);
+                    });
+        }
     }
+
 
     // Optionally, you might want to clean up sinks when they are no longer being used
     // For example, when a chatroom becomes empty, you could remove its sink from the map
