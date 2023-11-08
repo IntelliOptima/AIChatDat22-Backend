@@ -61,6 +61,7 @@ public class ChatroomController {
     // Method for clients to send messages to a chatroom
     @MessageMapping("chat.send.{chatroomId}")
     public void receiveMessage(@DestinationVariable String chatroomId, Message chatMessage, RSocketRequester requester) {
+        System.out.println(chatMessage.textMessage());
         // Retrieve or create a new sink for the chatroom
         Sinks.Many<Message> sink = chatroomSinks.computeIfAbsent(chatroomId, id -> Sinks.many().replay().latest());
 
