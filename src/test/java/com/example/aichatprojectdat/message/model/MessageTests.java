@@ -2,6 +2,8 @@ package com.example.aichatprojectdat.message.model;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.UUID;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class MessageTests {
@@ -10,7 +12,7 @@ public class MessageTests {
     void whenInvokingStaticFactoryMethod_ReturnMessage() {
         long userId = 3L;
         String mockMessage = "A beautiful weather";
-        long chatroomId = 2L;
+        String chatroomId = UUID.randomUUID().toString();
 
         Message message = Message.of(userId, mockMessage, chatroomId);
 

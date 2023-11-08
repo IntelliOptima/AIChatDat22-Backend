@@ -9,7 +9,7 @@ import reactor.core.publisher.Mono;
 @Repository
 public interface ChatroomUsersRelationRepository extends R2dbcRepository<ChatroomUsersRelation, Long> {
 
-    Flux<ChatroomUsersRelation> findAllByChatroomId(Long chatroomId);
+    Flux<ChatroomUsersRelation> findAllByChatroomId(String chatroomId);
 
-    Mono<ChatroomUsersRelation> findByUserIdAndChatroomId(Long userId, Long chatroomId);
+    Mono<ChatroomUsersRelation> findByUserIdAndChatroomId(Long userId, String chatroomId);
 }
