@@ -11,7 +11,7 @@ public interface IChatroomService {
 
     Flux<Chatroom> findAll();
 
-    Mono<Chatroom> findById(Long chatroomId);
+    Mono<Chatroom> findById(String chatroomId);
 
     Flux<Chatroom> findAllByCreatorId(Long creatorId);
 }

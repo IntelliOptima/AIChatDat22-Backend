@@ -9,7 +9,7 @@ import reactor.core.publisher.Mono;
 public interface IChatRoomUsersRelationService {
     Mono<ChatroomUsersRelation> create(ChatroomUsersRelation chatroomUsersRelation);
 
-    Flux<ChatroomUsersRelation> findAllByChatroomId(Long id);
+    Flux<ChatroomUsersRelation> findAllByChatroomId(String chatroomId);
 
-    Mono<Boolean> isUserPartOfChatroom(Long userId, Long chatroomId);
+    Mono<Boolean> isUserPartOfChatroom(Long userId, String chatroomId);
 }

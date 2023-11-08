@@ -16,7 +16,7 @@ public interface IMessageService {
 
     Flux<Message> getMessages();
 
-    Flux<Message> getMessagesByChatroomId(Long chatroomId);
+    Flux<Message> getMessagesByChatroomId(String chatroomId);
 
     Mono<Void> deleteById(long messageId);
 

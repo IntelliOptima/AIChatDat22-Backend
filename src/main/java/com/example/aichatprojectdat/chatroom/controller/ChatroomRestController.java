@@ -24,7 +24,7 @@ public class ChatroomRestController {
     }
 
     @GetMapping("/{id}")
-    Mono<Chatroom> getChatroom(@PathVariable Long id) {
+    Mono<Chatroom> getChatroom(@PathVariable String id) {
         return service.findById(id);
     }
 

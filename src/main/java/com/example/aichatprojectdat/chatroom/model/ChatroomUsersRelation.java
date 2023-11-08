@@ -7,11 +7,11 @@ import org.springframework.data.relational.core.mapping.Table;
 public record ChatroomUsersRelation(
         @Id
         Long id,
-        Long chatroomId,
+        String chatroomId,
         Long userId
 ) {
 
-    public static ChatroomUsersRelation of(Long chatroomId, Long userId) {
+    public static ChatroomUsersRelation of(String chatroomId, Long userId) {
         return new ChatroomUsersRelation(null, chatroomId, userId);
     }
 }

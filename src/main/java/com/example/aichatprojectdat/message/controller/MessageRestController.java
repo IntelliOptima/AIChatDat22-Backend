@@ -38,7 +38,7 @@ private final IMessageService messageService;
 
 
     @GetMapping("/findByChatroomId={chatroomId}")
-    public Mono<ResponseEntity<Flux<Message>>> getMessagesByChatroomId(@PathVariable Long chatroomId) {
+    public Mono<ResponseEntity<Flux<Message>>> getMessagesByChatroomId(@PathVariable String chatroomId) {
         return Mono.just(ResponseEntity.ok().body(messageService.getMessagesByChatroomId(chatroomId)));
     }
 

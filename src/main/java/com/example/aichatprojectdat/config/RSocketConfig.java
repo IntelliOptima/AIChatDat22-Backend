@@ -17,7 +17,7 @@ import java.util.Map;
 
 @Configuration
 public class RSocketConfig {
-/*
+
     @Bean
     public RSocketStrategies rSocketStrategies() {
         return RSocketStrategies.builder()
@@ -41,10 +41,10 @@ public class RSocketConfig {
     @Bean
     public RSocketServerCustomizer rSocketServerCustomizer() {
         return rSocketServer -> rSocketServer.payloadDecoder(PayloadDecoder.ZERO_COPY);
-    } */
-
-    @Bean
-    RSocketMessageHandler messageHandler() {
-        return new RSocketMessageHandler();
     }
+
+//    @Bean
+//    RSocketMessageHandler messageHandler() {
+//        return new RSocketMessageHandler();
+//    }
 }

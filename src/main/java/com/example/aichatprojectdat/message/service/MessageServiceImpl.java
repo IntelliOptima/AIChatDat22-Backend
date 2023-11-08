@@ -29,7 +29,7 @@ public class MessageServiceImpl implements IMessageService {
     }
 
     @Override
-    public Flux<Message> getMessagesByChatroomId(Long chatroomId) {
+    public Flux<Message> getMessagesByChatroomId(String chatroomId) {
         return messageRepository.findAllByChatroomId(chatroomId);
     }
 
