@@ -9,6 +9,7 @@ import com.example.aichatprojectdat.message.model.Message;
 import com.example.aichatprojectdat.message.service.IMessageService;
 import com.example.aichatprojectdat.user.model.User;
 import com.example.aichatprojectdat.user.service.IUserService;
+import com.sun.jdi.LongValue;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -18,7 +19,13 @@ import org.springframework.data.r2dbc.config.EnableR2dbcAuditing;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 @SpringBootApplication
 @EnableR2dbcAuditing
@@ -38,52 +45,38 @@ public class AiChatProjectDatApplication {
     ) {
         return args -> {
             // Create Users and Chatrooms in sequence
-            Flux.fromStream(LongStream.range(1, 4).boxed())
-                    .flatMap(i -> userService.create(User.of("test" + i + "@test.dk", "Alex" + i))
+            List<String> chatroomIds = Stream.of(1, 4)
+                    .map(i -> UUID.randomUUID().toString())
+                    .toList();
+
+            chatroomIds.forEach(chatroomId ->
+                    userService.create(User.of("test1@mail.com", "Alex1"))
                             .then(chatroomService.create(Chatroom.builder()
-                                    .chatroomUserCreatorId(i)
+                                    .id(chatroomId)
+                                    .chatroomUserCreatorId(1L) // Assuming the user ID of the created user is 1L
                                     .build()))
-                            .then(chatRoomUsersRelationService.create(ChatroomUsersRelation.of(i, i))))
-
-                    .thenMany(
-                            // Create Messages after Users and Chatrooms are created
-                            Flux.fromStream(LongStream.range(1, 4).boxed())
-                                    .flatMap(i -> Flux.fromStream(LongStream.range(1, 10).boxed())
-                                            .flatMap(j -> messageService.create(Message.of(i, "TESTER" + j, i)))
+                            .thenMany(Flux.fromStream(LongStream.range(1, 4).boxed())
+                                    .flatMap(aLong -> userService.create(User.of("test" + aLong + "@mail.com", "Alex" + aLong))
+                                            .flatMap(user -> chatRoomUsersRelationService.create(ChatroomUsersRelation.of(chatroomId, user.id())))
                                     )
-                    )
-                    .then(chatroomService.findById(1L))
-                    .doOnNext(chatroom -> {
-                        System.out.println(chatroom.getMessages().size());
-                        System.out.println(chatroom.getUsers().size());
-                    })
-                    .onErrorContinue((throwable, o) -> {
-                        // Handle errors here
-                        System.err.println("An error occurred: " + throwable.getMessage());
-                    })
-                    .subscribe();
-
-
-
-            /*
-            Mono<Message> messageMono = messageService.getMessageById(1L)
-                            .flatMap(message -> {
-                                System.out.println(message.toString());
-                                Message updatedMessage = new Message(
-                                        message.id(),
-                                        message.userId(),
-                                        "ITS OVERWRITTEN AND MANIPULATED!",
-                                        message.chatroomId(),
-                                        message.createdDate(),
-                                        message.lastModifiedDate(),
-                                        message.version()
-                                );
-                                return messageService.create(updatedMessage);
-                            });
-            messageMono.subscribe(System.out::println);
-             */
-
+                            )
+                            .thenMany(Flux.fromStream(LongStream.range(1, 4).boxed())
+                                    .flatMap(userId -> Flux.fromStream(LongStream.range(1, 10).boxed())
+                                            .flatMap(messageIndex -> messageService.create(Message.of(userId, "TESTER" + messageIndex, chatroomId)))
+                                    )
+                            )
+                            .then(chatroomService.findById(chatroomId))
+                            .doOnNext(chatroom -> {
+                                System.out.println("Number of messages: " + chatroom.getMessages().size());
+                                System.out.println("Number of users: " + chatroom.getUsers().size());
+                            })
+                            .onErrorContinue((throwable, o) -> {
+                                System.err.println("An error occurred: " + throwable.getMessage());
+                            })
+                            .subscribe()
+            );
         };
     }
+
 
 }

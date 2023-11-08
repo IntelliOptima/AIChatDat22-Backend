@@ -16,6 +16,6 @@ public class ChatroomWebsocketController {
     public OutputMessage send(Message message) {
         System.out.println(message.toString());
         String time = new SimpleDateFormat("HH:mm").format(new Date());
-        return new OutputMessage((String.valueOf(message.userId())), message.message(), time);
+        return new OutputMessage((String.valueOf(message.userId())), message.textMessage(), time);
     }
 }

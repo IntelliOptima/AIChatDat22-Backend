@@ -35,7 +35,7 @@ public class ChatroomServiceImpl implements IChatroomService {
         return chatroomRepository.findAll();
     }
 
-    public Mono<Chatroom> findById(Long chatroomId) {
+    public Mono<Chatroom> findById(String chatroomId) {
         return chatroomRepository.findById(chatroomId)
                 .switchIfEmpty(Mono.error(new NotFoundException()))
                 .flatMap(chatroom -> {
