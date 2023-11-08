@@ -39,7 +39,7 @@ CREATE TABLE chatroom_users_relation (
 CREATE TABLE message (
   id                            INT AUTO_INCREMENT PRIMARY KEY,
   user_id                       INT,
-  message                       TEXT NOT NULL,
+  textMessages                  TEXT NOT NULL,
   chatroom_id                   VARCHAR(36) NOT NULL,
   created_date                  TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
   last_modified_date            TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
