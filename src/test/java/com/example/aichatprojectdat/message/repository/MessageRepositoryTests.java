@@ -69,7 +69,7 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
         StepVerifier.create(messageMono)
                 .consumeNextWith(message -> {
                     assertTrue(message.id() > 0);
-                    assertEquals(message.message(), mockMessage);
+                    assertEquals(message.textMessage(), mockMessage);
                     assertEquals(message.userId(), userId);
                     assertEquals(message.chatroomId(), chatroomId);
                 })
