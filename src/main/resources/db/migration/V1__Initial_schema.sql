@@ -6,7 +6,7 @@ CREATE TABLE user
     profile_image               TEXT,
     created_date                TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
     last_modified_date          TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
-    version                     INT,
+    version                     INT
 );
 
 CREATE TABLE chatroom (
