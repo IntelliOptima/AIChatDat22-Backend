@@ -7,5 +7,6 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 
 public interface IUserService {
+
     Mono<User> createOrReturnExistingUser(User user);
 }
