@@ -10,6 +10,7 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 
 import java.time.Instant;
+import java.time.LocalDate;
 
 @Table
 public record User (
@@ -35,5 +36,10 @@ public record User (
 ) {
     public static User of(String email, String fullName) {
         return new User(null, email, fullName, null, null, null);
+    }
+
+
+    public static User chatGPTUser() {
+        return new User(1L, "chatgpt@chatgpt.com", "CHATGPT", null, null, null);
     }
 }

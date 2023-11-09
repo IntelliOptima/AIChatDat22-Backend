@@ -31,6 +31,12 @@ spring:
     user: ${spring.r2dbc.username}
     password: ${spring.r2dbc.password}
 
+
 logging:
   level:
     '[io.r2dbc]': info
+
+
+openai:
+  api:
+    key:
