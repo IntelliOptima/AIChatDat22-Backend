@@ -41,7 +41,7 @@ public class ChatGPTServiceImpl implements IChatGPTService{
 
         return webClient.post()
                 .contentType(MediaType.APPLICATION_JSON)
-                .headers(h -> h.setBearerAuth(""))
+                .headers(h -> h.setBearerAuth("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"))
                 .bodyValue(gptRequest)
                 .retrieve()
                 .bodyToMono(GptResponse.class)
