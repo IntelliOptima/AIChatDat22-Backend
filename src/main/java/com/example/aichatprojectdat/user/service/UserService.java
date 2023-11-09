@@ -1,9 +1,11 @@
 package com.example.aichatprojectdat.user.service;
 
+import com.example.aichatprojectdat.user.exception.CustomDuplicateUserException;
 import com.example.aichatprojectdat.user.model.User;
 import com.example.aichatprojectdat.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -18,7 +20,6 @@ public class UserService implements IUserService {
     @Override
     public Mono<User> createOrReturnExistingUser(User user) {
         return userRepository.findUserByEmail(user.email())
-                .flatMap(Mono::justOrEmpty)
-                .switchIfEmpty(userRepository.save(user));
+                .switchIfEmpty(Mono.defer(() -> userRepository.save(user)));
     }
 }

@@ -19,7 +19,9 @@ import org.springframework.data.r2dbc.config.EnableR2dbcAuditing;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -44,40 +46,30 @@ public class AiChatProjectDatApplication {
             IChatRoomUsersRelationService chatRoomUsersRelationService
     ) {
         return args -> {
-
-            userService.createOrReturnExistingUser(User.chatGPTUser()).subscribe();
-
             // Create Users and Chatrooms in sequence
-            List<String> chatroomIds = Stream.of(1, 4)
+            List<String> chatroomIds = Stream.of(2, 11)
                     .map(i -> UUID.randomUUID().toString())
                     .toList();
+            userService.createOrReturnExistingUser(User.chatGPTUser()).block();
 
-            chatroomIds.forEach(chatroomId ->
-                    userService.createOrReturnExistingUser(User.of("test1@mail.com", "Alex1", null))
-                            .then(chatroomService.create(Chatroom.builder()
-                                    .id(chatroomId)
-                                    .chatroomUserCreatorId(2L) // Assuming the user ID of the created user is 1L
-                                    .build()))
-                            .thenMany(Flux.fromStream(LongStream.range(1, 4).boxed())
-                                    .flatMap(aLong -> userService.createOrReturnExistingUser(User.of("test" + aLong + "@mail.com", "Alex" + aLong, null))
-                                            .flatMap(user -> chatRoomUsersRelationService.create(ChatroomUsersRelation.of(chatroomId, user.id())))
-                                    )
-                            )
-                            .thenMany(Flux.fromStream(LongStream.range(1, 4).boxed())
-                                    .flatMap(userId -> Flux.fromStream(LongStream.range(1, 10).boxed())
-                                            .flatMap(messageIndex -> messageService.create(Message.of(userId, "TESTER" + messageIndex, chatroomId)))
-                                    )
-                            )
-                            .then(chatroomService.findById(chatroomId))
-                            .doOnNext(chatroom -> {
-                                System.out.println("Number of messages: " + chatroom.getMessages().size());
-                                System.out.println("Number of users: " + chatroom.getUsers().size());
-                            })
-                            .onErrorContinue((throwable, o) -> {
-                                System.err.println("An error occurred: " + throwable.getMessage());
-                            })
-                            .subscribe()
-            );
+            chatroomIds.forEach(chatroomId -> {
+                userService.createOrReturnExistingUser(User.of("test" + chatroomId + "@test.com", "alex", null))
+                        .flatMap(user -> chatroomService.create(Chatroom.builder()
+                                            .id(chatroomId)
+                                            .chatroomUserCreatorId(user.id())
+                                            .build())
+                                            .flatMap(chatroom -> chatRoomUsersRelationService.create(
+                                                    ChatroomUsersRelation.of(chatroom.getId(), user.id()))
+                                                    .flatMap(chatroomUsersRelation -> userService.createOrReturnExistingUser(
+                                                            User.of("anotherTest - "+ chatroomId + " - @test.dk", "TEQNO", null)))
+                                                    .flatMap(anotherUser -> chatRoomUsersRelationService.create(ChatroomUsersRelation.of(chatroomId, anotherUser.id())))
+
+
+                        ))
+                        .subscribe();
+
+            });
+
         };
     }
 
