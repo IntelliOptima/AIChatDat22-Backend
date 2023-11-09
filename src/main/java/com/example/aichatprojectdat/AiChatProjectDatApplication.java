@@ -53,13 +53,13 @@ public class AiChatProjectDatApplication {
                     .toList();
 
             chatroomIds.forEach(chatroomId ->
-                    userService.createOrReturnExistingUser(User.of("test1@mail.com", "Alex1"))
+                    userService.createOrReturnExistingUser(User.of("test1@mail.com", "Alex1", null))
                             .then(chatroomService.create(Chatroom.builder()
                                     .id(chatroomId)
                                     .chatroomUserCreatorId(2L) // Assuming the user ID of the created user is 1L
                                     .build()))
                             .thenMany(Flux.fromStream(LongStream.range(1, 4).boxed())
-                                    .flatMap(aLong -> userService.createOrReturnExistingUser(User.of("test" + aLong + "@mail.com", "Alex" + aLong))
+                                    .flatMap(aLong -> userService.createOrReturnExistingUser(User.of("test" + aLong + "@mail.com", "Alex" + aLong, null))
                                             .flatMap(user -> chatRoomUsersRelationService.create(ChatroomUsersRelation.of(chatroomId, user.id())))
                                     )
                             )
