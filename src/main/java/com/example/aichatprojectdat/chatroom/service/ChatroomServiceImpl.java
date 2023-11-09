@@ -2,6 +2,7 @@ package com.example.aichatprojectdat.chatroom.service;
 
 import com.example.aichatprojectdat.chatroom.exception.NotFoundException;
 import com.example.aichatprojectdat.chatroom.model.Chatroom;
+import com.example.aichatprojectdat.chatroom.model.ChatroomUsersRelation;
 import com.example.aichatprojectdat.chatroom.repository.ChatroomRepository;
 import com.example.aichatprojectdat.chatroom.repository.ChatroomUsersRelationRepository;
 import com.example.aichatprojectdat.message.model.Message;
@@ -16,6 +17,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -27,8 +29,11 @@ public class ChatroomServiceImpl implements IChatroomService {
     private final UserRepository userRepository;
     private final MessageRepository messageRepository;
 
-    public Mono<Chatroom> create(Chatroom chatroom) {
-        return chatroomRepository.save(chatroom);
+    public Mono<Chatroom> create(Long chatroomUserCreatorId) {
+        return chatroomRepository.save(Chatroom.builder()
+                .id(UUID.randomUUID().toString())
+                .chatroomUserCreatorId(chatroomUserCreatorId)
+                .build());
     }
 
     public Flux<Chatroom> findAll() {
@@ -67,6 +72,12 @@ public class ChatroomServiceImpl implements IChatroomService {
                 .doOnError(error -> System.out.println("Error in findById: " + error.getMessage()));
     }
 
+
+    public Flux<Chatroom> findAllParticipatingChatrooms(Long userId) {
+        return chatroomUsersRelationRepository.findAllByUserId(userId)
+                .switchIfEmpty(Mono.error(new NotFoundException()))
+                .flatMap(chatroomUsersRelation -> findById(chatroomUsersRelation.chatroomId()));
+    }
 
 
     public Flux<Chatroom> findAllByCreatorId(Long creatorId) {

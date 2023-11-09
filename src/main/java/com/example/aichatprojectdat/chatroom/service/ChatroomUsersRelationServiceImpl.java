@@ -11,7 +11,7 @@ import reactor.core.publisher.Mono;
 @Service
 @RequiredArgsConstructor
 @Primary
-public class ChatroomUsersRelationService implements IChatRoomUsersRelationService {
+public class ChatroomUsersRelationServiceImpl implements IChatRoomUsersRelationService {
 
     private final ChatroomUsersRelationRepository chatroomUsersRelationRepository;
 
@@ -23,6 +23,11 @@ public class ChatroomUsersRelationService implements IChatRoomUsersRelationServi
     @Override
     public Flux<ChatroomUsersRelation> findAllByChatroomId(String chatroomId) {
         return chatroomUsersRelationRepository.findAllByChatroomId(chatroomId);
+    }
+
+    @Override
+    public Flux<ChatroomUsersRelation> findAllByUserId(Long userId) {
+        return chatroomUsersRelationRepository.findAllByUserId(userId);
     }
 
     @Override

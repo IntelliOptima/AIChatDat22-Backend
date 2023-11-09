@@ -10,28 +10,29 @@ import reactor.core.publisher.Mono;
 
 @RestController
 @RequiredArgsConstructor
+@CrossOrigin
 @RequestMapping("/api/v1/chatroom")
 public class ChatroomRestController {
-    private final IChatroomService service;
+    private final IChatroomService chatroomService;
 
-    @PostMapping(produces = MediaType.APPLICATION_NDJSON_VALUE)
-    Mono<Chatroom> create(@RequestBody Chatroom chatroom) {
-        return service.create(chatroom);
+    @PostMapping("{chatroomUserCreatorId}")
+    Mono<Chatroom> create(@PathVariable Long chatroomUserCreatorId) {
+        return chatroomService.create(chatroomUserCreatorId);
     }
 
-    @GetMapping
-    Flux<Chatroom> getAllChatrooms() {
-        return service.findAll();
+    @GetMapping("/participatingChatrooms/{userId}")
+    Flux<Chatroom> getParticipatingChatrooms(@PathVariable Long userId) {
+        return chatroomService.findAllParticipatingChatrooms(userId);
     }
 
     @GetMapping("/{id}")
     Mono<Chatroom> getChatroom(@PathVariable String id) {
-        return service.findById(id);
+        return chatroomService.findById(id);
     }
-
 
     @GetMapping("/{creatorId}")
     public Flux<Chatroom> getChatroomByCreatorId(@PathVariable Long creatorId) {
-        return service.findAllByCreatorId(creatorId);
+        return chatroomService.findAllByCreatorId(creatorId);
     }
+
 }
