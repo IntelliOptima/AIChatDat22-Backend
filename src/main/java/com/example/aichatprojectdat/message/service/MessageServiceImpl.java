@@ -45,10 +45,7 @@ public class MessageServiceImpl implements IMessageService {
 
     @Override
     public Flux<Message> getMessages() {
-        return messageRepository.findAll().delayElements(Duration.ofMillis(100)).map(message -> {
-            if (message.id() > 20 && message.id() < 30) throw new RuntimeException();
-            return message;
-        });
+        return messageRepository.findAll();
     }
 
     
