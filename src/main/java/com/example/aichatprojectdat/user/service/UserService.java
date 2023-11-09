@@ -18,8 +18,13 @@ public class UserService implements IUserService {
     private final UserRepository userRepository;
 
     @Override
-    public Mono<User> createOrReturnExistingUser(User user) {
-        return userRepository.findUserByEmail(user.email())
+    public Mono<User> findUserByEmail(String email) {
+        return userRepository.findUserByEmail(email);
+    }
+
+    @Override
+    public Mono<User> create(User user) {
+        return findUserByEmail(user.email())
                 .switchIfEmpty(Mono.defer(() -> userRepository.save(user)));
     }
 }

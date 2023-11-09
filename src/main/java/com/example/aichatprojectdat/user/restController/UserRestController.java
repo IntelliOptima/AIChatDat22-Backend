@@ -24,6 +24,6 @@ public class UserRestController {
 
     @PostMapping
     public Mono<User> getUser(@RequestBody User user) {
-        return userService.createOrReturnExistingUser(user);
+        return userService.create(user);
     }
 }
