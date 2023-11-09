@@ -10,7 +10,7 @@ public class MessageTests {
 
     @Test
     void whenInvokingStaticFactoryMethod_ReturnMessage() {
-        long userId = 3L;
+        long userId = 2L;
         String mockMessage = "A beautiful weather";
         String chatroomId = UUID.randomUUID().toString();
 

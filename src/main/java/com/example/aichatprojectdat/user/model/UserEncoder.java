@@ -1,10 +1,13 @@
-package com.example.aichatprojectdat.message.model;
+package com.example.aichatprojectdat.user.model;
 
+import com.example.aichatprojectdat.message.model.Message;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.NonNull;
 import org.reactivestreams.Publisher;
 import org.springframework.core.ResolvableType;
+import org.springframework.core.codec.AbstractDecoder;
 import org.springframework.core.codec.AbstractEncoder;
+import org.springframework.core.codec.DecodingException;
 import org.springframework.core.codec.EncodingException;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferFactory;
@@ -16,11 +19,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-public class MessageEncoder extends AbstractEncoder<Message> {
-
+public class UserEncoder extends AbstractEncoder<User> {
     private final ObjectMapper objectMapper;
 
-    public MessageEncoder(ObjectMapper objectMapper) {
+    public UserEncoder(ObjectMapper objectMapper) {
         super(MimeType.valueOf("application/octet-stream"));
         this.objectMapper = objectMapper;
     }
@@ -28,11 +30,11 @@ public class MessageEncoder extends AbstractEncoder<Message> {
 
     @Override
     @NonNull
-    public Flux<DataBuffer> encode(@NonNull Publisher<? extends Message> inputStream,@NonNull DataBufferFactory bufferFactory, @NonNull ResolvableType elementType, MimeType mimeType, Map<String, Object> hints) {
+    public Flux<DataBuffer> encode(@NonNull Publisher<? extends User> inputStream, @NonNull DataBufferFactory bufferFactory, @NonNull ResolvableType elementType, MimeType mimeType, Map<String, Object> hints) {
         return Flux.from(inputStream)
-                .flatMap(message -> {
+                .flatMap(user -> {
                     try {
-                        byte[] bytes = objectMapper.writeValueAsBytes(message);
+                        byte[] bytes = objectMapper.writeValueAsBytes(user);
                         DataBuffer buffer = bufferFactory.wrap(bytes);
                         return Mono.just(buffer);
                     } catch (Exception e) {
@@ -41,10 +43,9 @@ public class MessageEncoder extends AbstractEncoder<Message> {
                 });
     }
 
-
     @Override
     @NonNull
-    public DataBuffer encodeValue(@NonNull Message value, @NonNull DataBufferFactory bufferFactory, @NonNull ResolvableType valueType, MimeType mimeType, Map<String, Object> hints) {
+    public DataBuffer encodeValue(@NonNull User value, @NonNull DataBufferFactory bufferFactory, @NonNull ResolvableType valueType, MimeType mimeType, Map<String, Object> hints) {
         try {
             byte[] bytes = objectMapper.writeValueAsBytes(value);
             return bufferFactory.wrap(bytes);
@@ -52,7 +53,6 @@ public class MessageEncoder extends AbstractEncoder<Message> {
             throw new EncodingException("Could not encode Message to JSON", e);
         }
     }
-
 
     @Override
     @NonNull

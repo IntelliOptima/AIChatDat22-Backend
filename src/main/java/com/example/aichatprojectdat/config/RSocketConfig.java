@@ -3,6 +3,8 @@ package com.example.aichatprojectdat.config;
 import com.example.aichatprojectdat.message.model.Message;
 import com.example.aichatprojectdat.message.model.MessageDecoder;
 import com.example.aichatprojectdat.message.model.MessageEncoder;
+import com.example.aichatprojectdat.user.model.UserDecoder;
+import com.example.aichatprojectdat.user.model.UserEncoder;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
@@ -53,6 +55,8 @@ public class RSocketConfig {
                 // Add custom decoder here for APPLICATION_OCTET_STREAM
                 .decoder(new MessageDecoder(objectMapper))
                 .encoder(new MessageEncoder(objectMapper))
+                .decoder(new UserDecoder(objectMapper))
+                .encoder(new UserEncoder(objectMapper))
                 .build();
     }
 

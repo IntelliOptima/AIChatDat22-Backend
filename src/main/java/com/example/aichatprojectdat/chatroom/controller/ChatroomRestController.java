@@ -3,6 +3,7 @@ package com.example.aichatprojectdat.chatroom.controller;
 import com.example.aichatprojectdat.chatroom.model.Chatroom;
 import com.example.aichatprojectdat.chatroom.service.IChatroomService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -13,7 +14,7 @@ import reactor.core.publisher.Mono;
 public class ChatroomRestController {
     private final IChatroomService service;
 
-    @PostMapping
+    @PostMapping(produces = MediaType.APPLICATION_NDJSON_VALUE)
     Mono<Chatroom> create(@RequestBody Chatroom chatroom) {
         return service.create(chatroom);
     }
