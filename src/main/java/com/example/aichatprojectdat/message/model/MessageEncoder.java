@@ -53,6 +53,7 @@ public class MessageEncoder extends AbstractEncoder<Message> {
         }
     }
 
+
     @Override
     @NonNull
     public List<MimeType> getEncodableMimeTypes() {

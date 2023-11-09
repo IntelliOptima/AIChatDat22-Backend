@@ -9,7 +9,7 @@ public class ChatroomTests {
 
     @Test
     void whenCreatingNewChatroom_ReturnChatroomWithCreatorId() {
-        long chatroomUserCreatorId = 1L;
+        long chatroomUserCreatorId = 2L;
 
         Chatroom chatroom = Chatroom.builder().chatroomUserCreatorId(chatroomUserCreatorId).build();
         assertNull(chatroom.getId(), "Id should be handled by Database, and always be null on creation");

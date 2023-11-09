@@ -44,6 +44,9 @@ public class AiChatProjectDatApplication {
             IChatRoomUsersRelationService chatRoomUsersRelationService
     ) {
         return args -> {
+
+            userService.create(User.chatGPTUser()).subscribe();
+
             // Create Users and Chatrooms in sequence
             List<String> chatroomIds = Stream.of(1, 4)
                     .map(i -> UUID.randomUUID().toString())
@@ -53,7 +56,7 @@ public class AiChatProjectDatApplication {
                     userService.create(User.of("test1@mail.com", "Alex1"))
                             .then(chatroomService.create(Chatroom.builder()
                                     .id(chatroomId)
-                                    .chatroomUserCreatorId(1L) // Assuming the user ID of the created user is 1L
+                                    .chatroomUserCreatorId(2L) // Assuming the user ID of the created user is 1L
                                     .build()))
                             .thenMany(Flux.fromStream(LongStream.range(1, 4).boxed())
                                     .flatMap(aLong -> userService.create(User.of("test" + aLong + "@mail.com", "Alex" + aLong))

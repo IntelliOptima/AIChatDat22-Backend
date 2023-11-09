@@ -39,4 +39,4 @@ logging:
 
 openai:
   api:
-    key: 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
+    key:

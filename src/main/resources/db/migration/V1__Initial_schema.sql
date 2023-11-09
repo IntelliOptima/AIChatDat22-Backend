@@ -1,6 +1,6 @@
 CREATE TABLE user
 (
-    id                          INT AUTO_INCREMENT PRIMARY KEY,
+    id                          BIGINT AUTO_INCREMENT PRIMARY KEY,
     email                       VARCHAR(100) NOT NULL,
     full_name                   VARCHAR(100) NOT NULL,
     created_date                TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
@@ -10,7 +10,7 @@ CREATE TABLE user
 
 CREATE TABLE chatroom (
   id                            VARCHAR(36) NOT NULL PRIMARY KEY,
-  chatroom_user_creator_id      INT,
+  chatroom_user_creator_id      BIGINT,
   created_date                  TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
   last_modified_date            TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
   version                       INT,
@@ -22,9 +22,9 @@ CREATE TABLE chatroom (
 
 
 CREATE TABLE chatroom_users_relation (
-    id                          INT AUTO_INCREMENT PRIMARY KEY,
+    id                          BIGINT AUTO_INCREMENT PRIMARY KEY,
     chatroom_id                 VARCHAR(36) NOT NULL,
-    user_id                     INT,
+    user_id                     BIGINT,
 
     CONSTRAINT fk_ChatroomMessageRelation
         FOREIGN KEY (chatroom_id)
@@ -37,9 +37,9 @@ CREATE TABLE chatroom_users_relation (
 
 
 CREATE TABLE message (
-  id                            INT AUTO_INCREMENT PRIMARY KEY,
-  user_id                       INT,
-  textMessages                  TEXT NOT NULL,
+  id                            BIGINT AUTO_INCREMENT PRIMARY KEY,
+  user_id                       BIGINT,
+  text_message                  TEXT NOT NULL,
   chatroom_id                   VARCHAR(36) NOT NULL,
   created_date                  TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
   last_modified_date            TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
