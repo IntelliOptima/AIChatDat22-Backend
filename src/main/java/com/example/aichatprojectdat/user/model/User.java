@@ -21,11 +21,11 @@ public record User (
       @NotEmpty
       String email,
 
-      String profileImage,
-
       @NotEmpty
       @NotNull
       String fullName,
+
+      String profileImage,
 
       @CreatedDate
       Instant createdDate,
@@ -37,7 +37,7 @@ public record User (
       Long version
 ) {
     public static User of(String email, String fullName, String profileImage) {
-        return new User(null, email, profileImage ,fullName, null, null, null);
+        return new User(null, email, fullName, profileImage, null, null, null);
     }
 
 
