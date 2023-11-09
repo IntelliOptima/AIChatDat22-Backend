@@ -12,5 +12,4 @@ import java.util.List;
 public interface UserRepository extends R2dbcRepository<User, Long> {
 
     Mono<User> findUserByEmail(String email);
-    Flux<User> findUsersByIdIn(Iterable<Long> ids);
 }

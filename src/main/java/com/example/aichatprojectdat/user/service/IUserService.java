@@ -8,6 +8,4 @@ import java.util.List;
 
 public interface IUserService {
     Mono<User> createOrReturnExistingUser(User user);
-
-    Flux<User> findUsersByIdIn(Iterable<Long> userIds);
 }
