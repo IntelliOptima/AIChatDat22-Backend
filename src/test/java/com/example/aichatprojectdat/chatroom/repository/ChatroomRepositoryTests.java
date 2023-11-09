@@ -46,10 +46,10 @@ public class ChatroomRepositoryTests extends AbstractIntegrationTest {
     @BeforeEach
     void createUserForChatroom() {
         users.clear();
-        users.add(userService.createOrReturnExistingUser(User.of("Alexander@hotmail.com", "Alexander Bø")).block());
-        users.add(userService.createOrReturnExistingUser(User.of("Alex@hotmail.com", "Holmberg")).block());
-        users.add(userService.createOrReturnExistingUser(User.of("Mikkel@hotmail.com", "Mikkel Fun")).block());
-        users.add(userService.createOrReturnExistingUser(User.of("Oliver@hotmail.com", "Oliver")).block());
+        users.add(userService.createOrReturnExistingUser(User.of("Alexander@hotmail.com", "Alexander Bø", null)).block());
+        users.add(userService.createOrReturnExistingUser(User.of("Alex@hotmail.com", "Holmberg", null)).block());
+        users.add(userService.createOrReturnExistingUser(User.of("Mikkel@hotmail.com", "Mikkel Fun", null)).block());
+        users.add(userService.createOrReturnExistingUser(User.of("Oliver@hotmail.com", "Oliver", null)).block());
     }
 
 

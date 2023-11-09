@@ -25,6 +25,8 @@ public record User (
       @NotNull
       String fullName,
 
+      String profileImage,
+
       @CreatedDate
       Instant createdDate,
 
@@ -34,12 +36,12 @@ public record User (
       @Version
       Long version
 ) {
-    public static User of(String email, String fullName) {
-        return new User(null, email, fullName, null, null, null);
+    public static User of(String email, String fullName, String profileImage) {
+        return new User(null, email, fullName, profileImage, null, null, null);
     }
 
 
     public static User chatGPTUser() {
-        return new User(1L, "chatgpt@chatgpt.com", "CHATGPT", null, null, null);
+        return new User(1L, "chatgpt@chatgpt.com", "CHATGPT", "https://th.bing.com/th/id/OIF.pu6JgOrk5eTBtCEFGtCR7Q?pid=ImgDet&rs=1", null, null, null);
     }
 }
