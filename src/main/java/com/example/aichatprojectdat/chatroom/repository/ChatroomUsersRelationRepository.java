@@ -11,5 +11,7 @@ public interface ChatroomUsersRelationRepository extends R2dbcRepository<Chatroo
 
     Flux<ChatroomUsersRelation> findAllByChatroomId(String chatroomId);
 
+    Flux<ChatroomUsersRelation> findAllByUserId(Long id);
+
     Mono<ChatroomUsersRelation> findByUserIdAndChatroomId(Long userId, String chatroomId);
 }
