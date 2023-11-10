@@ -8,5 +8,6 @@ import java.util.List;
 
 public interface IUserService {
 
-    Mono<User> createOrReturnExistingUser(User user);
+    Mono<User> findUserByEmail(String email);
+    Mono<User> create(User user);
 }
