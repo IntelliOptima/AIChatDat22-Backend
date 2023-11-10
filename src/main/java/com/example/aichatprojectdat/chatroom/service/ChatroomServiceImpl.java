@@ -31,10 +31,15 @@ public class ChatroomServiceImpl implements IChatroomService {
 
     public Mono<Chatroom> create(Long chatroomUserCreatorId) {
         return chatroomRepository.save(Chatroom.builder()
-                .id(UUID.randomUUID().toString())
-                .chatroomUserCreatorId(chatroomUserCreatorId)
-                .build());
+                        .id(UUID.randomUUID().toString())
+                        .chatroomUserCreatorId(chatroomUserCreatorId)
+                        .build())
+                .flatMap(chatroom ->
+                        chatroomUsersRelationRepository.save(ChatroomUsersRelation.of(chatroom.getId(), chatroomUserCreatorId))
+                                .then(findById(chatroom.getId()))
+                );
     }
+
 
     public Flux<Chatroom> findAll() {
         return chatroomRepository.findAll();

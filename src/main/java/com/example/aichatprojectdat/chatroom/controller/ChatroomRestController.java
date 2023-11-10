@@ -2,8 +2,10 @@ package com.example.aichatprojectdat.chatroom.controller;
 
 import com.example.aichatprojectdat.chatroom.model.Chatroom;
 import com.example.aichatprojectdat.chatroom.service.IChatroomService;
+import com.example.aichatprojectdat.message.model.Message;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -21,8 +23,8 @@ public class ChatroomRestController {
     }
 
     @GetMapping("/participatingChatrooms/{userId}")
-    Flux<Chatroom> getParticipatingChatrooms(@PathVariable Long userId) {
-        return chatroomService.findAllParticipatingChatrooms(userId);
+    Mono<ResponseEntity<Flux<Chatroom>>> getParticipatingChatrooms(@PathVariable Long userId) {
+        return Mono.just(ResponseEntity.ok().body(chatroomService.findAllParticipatingChatrooms(userId)));
     }
 
     @GetMapping("/{id}")
