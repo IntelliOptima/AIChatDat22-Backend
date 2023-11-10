@@ -42,7 +42,7 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
 
     @BeforeEach
     void createChatRoom() {
-        testUser = userService.createOrReturnExistingUser(User.of("test@email.com", "HASHAN", null)).block();
+        testUser = userService.create(User.of("test@email.com", "HASHAN", null)).block();
         testChatroom = chatroomService.create(
                 Chatroom.builder()
                         .id(UUID.randomUUID().toString())

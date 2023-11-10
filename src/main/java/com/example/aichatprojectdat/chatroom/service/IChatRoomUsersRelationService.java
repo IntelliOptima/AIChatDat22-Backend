@@ -10,6 +10,8 @@ public interface IChatRoomUsersRelationService {
     Mono<ChatroomUsersRelation> create(ChatroomUsersRelation chatroomUsersRelation);
 
     Flux<ChatroomUsersRelation> findAllByChatroomId(String chatroomId);
+    Flux<ChatroomUsersRelation> findAllByUserId(Long userId);
 
     Mono<Boolean> isUserPartOfChatroom(Long userId, String chatroomId);
+
 }

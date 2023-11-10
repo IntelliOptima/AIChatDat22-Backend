@@ -16,7 +16,7 @@ import reactor.core.publisher.Mono;
 @RestController
 @RequestMapping("/api/v1/message")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*", allowedHeaders = "*", methods = RequestMethod.GET)
+@CrossOrigin(origins = "http://localhost:3000", allowedHeaders = "*", methods = RequestMethod.GET)
 public class MessageRestController {
 
 private final IMessageService messageService;
