@@ -39,4 +39,4 @@ logging:
 
 openai:
   api:
-    key: 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
+    key: ${GPT_API}
