@@ -32,6 +32,7 @@ public class ChatroomController {
     private final IChatRoomUsersRelationService chatRoomUsersRelationService;
     private final Map<String, List<RSocketRequester>> subscribers = new ConcurrentHashMap<>();
     private final Map<String, Sinks.Many<Message>> chatroomSinks = new ConcurrentHashMap<>();
+    private final Map<String, Sinks.Many<String>> gptAnswerSinks = new ConcurrentHashMap<>();
 
     //_______________________ RSOCKET -> CHANNEL _______________________________
 
@@ -58,26 +59,28 @@ public class ChatroomController {
                 .doOnError(e -> System.out.println("Error creating message: " + e.getMessage()))
                 .subscribe();
 
-        // Retrieve or create a new sink for the chatroom
         Sinks.Many<Message> sink = chatroomSinks.computeIfAbsent(chatroomId, id -> Sinks.many().replay().latest());
-
-        // Emit the message to the sink
         sink.emitNext(chatMessage, Sinks.EmitFailureHandler.FAIL_FAST);
 
         if (chatMessage.textMessage().toLowerCase().startsWith("@gpt")) {
             String question = chatMessage.textMessage().substring(4);
+            StringBuilder gptResponseBuilder = new StringBuilder();
+
             gptService.chat(question)
                     .doOnError(e -> System.out.println("Error getting GPT answer: " + e.getMessage()))
-                    .subscribe(gptAnswer -> {
-                        Message gptMessage = Message.of(1L, gptAnswer, chatroomId);
-                        messageService.create(gptMessage).subscribe(message -> {
-                            sink.emitNext(gptMessage, Sinks.EmitFailureHandler.FAIL_FAST);
-                        });
-
+                    .subscribe(gptChunk -> {
+                        gptResponseBuilder.append(gptChunk);
+                        // Emit each chunk as it arrives for real-time streaming
+                        Sinks.Many<String> answerSink = gptAnswerSinks.computeIfAbsent(chatroomId, id -> Sinks.many().replay().latest());
+                        answerSink.emitNext(gptChunk, Sinks.EmitFailureHandler.FAIL_FAST);
+                    }, err -> {}, () -> {
+                        // Once all chunks are received, create and store the complete GPT message
+                        Message gptCompleteMessage = Message.of(1L, gptResponseBuilder.toString(), chatroomId);
+                        messageService.create(gptCompleteMessage).subscribe();
+                        sink.emitNext(gptCompleteMessage, Sinks.EmitFailureHandler.FAIL_FAST);
                     });
         }
     }
-
 
 
 

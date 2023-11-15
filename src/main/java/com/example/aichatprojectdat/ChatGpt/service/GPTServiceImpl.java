@@ -30,7 +30,7 @@ public class GPTServiceImpl implements IGPTService {
     public Flux<String> streamChat(String question ){
         this.chatCompletionRequest.addMessage(ChatMessage.userMessage(question));
         return chatGPTService.stream(chatCompletionRequest)
-                .map(chatgptReply -> "CHATGPT: " + chatgptReply.getReplyText());
+                .map(ChatCompletionResponse::getReplyText);
     }
 
 
