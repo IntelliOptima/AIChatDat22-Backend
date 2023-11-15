@@ -17,6 +17,7 @@ import com.example.aichatprojectdat.message.service.IMessageService;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.web.bind.annotation.CrossOrigin;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
@@ -24,6 +25,7 @@ import reactor.core.publisher.Sinks;
 @Slf4j
 @Controller
 @RequiredArgsConstructor
+@CrossOrigin
 public class ChatroomController {
     private final IMessageService messageService;
 
