@@ -6,6 +6,7 @@ import java.time.Instant;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 
 import com.example.aichatprojectdat.config.aspects.AdviceAnnotations.ValidateParams;
@@ -16,22 +17,27 @@ import jakarta.validation.constraints.NotNull;
 public record Message(
         @Id
         Long id,
-        
-        long userId,
 
-        @NotNull
-        String message,
+        Long userId,
 
-        long chatroomId,
+        String textMessage,
+
+        String chatroomId,
 
         @CreatedDate
         Instant createdDate,
 
         @LastModifiedDate
-        Instant lastModifiedDate
+        Instant lastModifiedDate,
+
+        @Version
+        Long version
 ) {
-        @ValidateParams
-        public static Message of(long userId, String message, long chatroomId) {
-                return new Message(null, userId, message, chatroomId, null, null);
+        public static Message of(Long userId, String textMessage, String chatroomId ){
+                return new Message(null, userId, textMessage, chatroomId, null, null, null);
+        }
+
+        public static Message empty() {
+                return new Message(null, null, null, null, null, null, null);
         }
 }

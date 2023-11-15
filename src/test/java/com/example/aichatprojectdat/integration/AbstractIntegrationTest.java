@@ -1,5 +1,6 @@
 package com.example.aichatprojectdat.integration;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Order;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -8,13 +9,12 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-@Order(1)
 @Testcontainers // Indicates that Testcontainers should be used
 public abstract class AbstractIntegrationTest {
 
     // Define your MySQL container (it will be shared between test classes)
-    @Container
-    static MySQLContainer<?> mySQLContainer = new MySQLContainer<>(DockerImageName.parse("mysql:latest"));
+    //@Container
+    private static final MySQLContainer<?> mySQLContainer = new MySQLContainer<>(DockerImageName.parse("mysql:latest"));
 
     @DynamicPropertySource
     static void dynamicProperties(DynamicPropertyRegistry registry) {
@@ -29,5 +29,10 @@ public abstract class AbstractIntegrationTest {
                 mySQLContainer.getHost(),
                 mySQLContainer.getMappedPort(MySQLContainer.MYSQL_PORT),
                 mySQLContainer.getDatabaseName());
+    }
+
+    @BeforeAll
+    static void setup() {
+        mySQLContainer.start();
     }
 }
