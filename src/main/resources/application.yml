@@ -10,9 +10,8 @@ spring:
     name: aichatdat-backend
   rsocket:
     server:
-      port: 6565
       transport: websocket
-
+      mapping-path: "/rsocket"
   lifecycle:
     timeout-per-shutdown-phase: 15s
 
@@ -31,6 +30,12 @@ spring:
     user: ${spring.r2dbc.username}
     password: ${spring.r2dbc.password}
 
+
 logging:
   level:
     '[io.r2dbc]': info
+
+
+openai:
+  api:
+    key: ${GPT_API}

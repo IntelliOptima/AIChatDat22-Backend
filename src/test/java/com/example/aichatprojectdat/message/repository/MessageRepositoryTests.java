@@ -42,12 +42,12 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
 
     @BeforeEach
     void createChatRoom() {
-        testUser = userService.create(User.of("test@email.com", "HASHAN")).block();
+        testUser = userService.create(User.of("test@email.com", "HASHAN", null)).block();
         testChatroom = chatroomService.create(
                 Chatroom.builder()
                         .id(UUID.randomUUID().toString())
                         .chatroomUserCreatorId(testUser.id())
-                        .build())
+                        .build().getChatroomUserCreatorId())
                 .block();
     }
 
