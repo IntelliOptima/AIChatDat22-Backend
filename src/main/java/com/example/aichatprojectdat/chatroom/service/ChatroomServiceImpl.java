@@ -12,6 +12,7 @@ import com.example.aichatprojectdat.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -29,15 +30,24 @@ public class ChatroomServiceImpl implements IChatroomService {
     private final UserRepository userRepository;
     private final MessageRepository messageRepository;
 
+
+    @Transactional
     public Mono<Chatroom> create(Long chatroomUserCreatorId, String chatroomName) {
         return chatroomRepository.save(Chatroom.builder()
                         .id(UUID.randomUUID().toString())
                         .chatroomName(chatroomName)
                         .chatroomUserCreatorId(chatroomUserCreatorId)
                         .build())
-                .flatMap(chatroom ->
-                        chatroomUsersRelationRepository.save(ChatroomUsersRelation.of(chatroom.getId(), chatroomUserCreatorId))
-                                .then(findById(chatroom.getId()))
+                .flatMap(chatroom -> {
+                    Mono<ChatroomUsersRelation> chatroomRelation = chatroomUsersRelationRepository
+                            .save(ChatroomUsersRelation.of(chatroom.getId(), chatroomUserCreatorId));
+
+                    Mono<ChatroomUsersRelation> GPTRelation = chatroomUsersRelationRepository.save(
+                            ChatroomUsersRelation.of(chatroom.getId(), 1L));
+
+                    return Mono.when(chatroomRelation, GPTRelation)
+                            .then(Mono.just(chatroom));
+                        }
                 );
     }
 
@@ -48,7 +58,7 @@ public class ChatroomServiceImpl implements IChatroomService {
 
     public Mono<Chatroom> findById(String chatroomId) {
         return chatroomRepository.findById(chatroomId)
-                .switchIfEmpty(Mono.error(new NotFoundException()))
+                .switchIfEmpty(Mono.error(new NotFoundException("Chatroom does not exist!")))
                 .flatMap(chatroom -> {
                     // Fetch and set the users
                     return chatroomUsersRelationRepository.findAllByChatroomId(chatroom.getId())
@@ -81,7 +91,7 @@ public class ChatroomServiceImpl implements IChatroomService {
 
     public Flux<Chatroom> findAllParticipatingChatrooms(Long userId) {
         return chatroomUsersRelationRepository.findAllByUserId(userId)
-                .switchIfEmpty(Mono.error(new NotFoundException()))
+                .switchIfEmpty(Mono.error(new NotFoundException("No Participants found!")))
                 .flatMap(chatroomUsersRelation -> findById(chatroomUsersRelation.chatroomId()));
     }
 

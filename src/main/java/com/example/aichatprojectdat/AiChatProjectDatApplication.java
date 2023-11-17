@@ -24,7 +24,15 @@ import java.util.stream.Stream;
 public class AiChatProjectDatApplication {
 
     public static void main(String[] args) {
+
         SpringApplication.run(AiChatProjectDatApplication.class, args);
+    }
+
+    @Bean
+    CommandLineRunner commandLineRun(IUserService userService) {
+        return args -> {
+            userService.create(User.chatGPTUser()).block();
+        };
     }
 
 //    @Bean

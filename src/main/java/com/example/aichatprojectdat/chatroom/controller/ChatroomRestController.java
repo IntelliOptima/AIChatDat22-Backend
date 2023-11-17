@@ -1,6 +1,8 @@
 package com.example.aichatprojectdat.chatroom.controller;
 
 import com.example.aichatprojectdat.chatroom.model.Chatroom;
+import com.example.aichatprojectdat.chatroom.model.ChatroomUsersRelation;
+import com.example.aichatprojectdat.chatroom.service.IChatRoomUsersRelationService;
 import com.example.aichatprojectdat.chatroom.service.IChatroomService;
 import com.example.aichatprojectdat.message.model.Message;
 import lombok.RequiredArgsConstructor;
@@ -16,10 +18,16 @@ import reactor.core.publisher.Mono;
 @RequestMapping("/api/v1/chatroom")
 public class ChatroomRestController {
     private final IChatroomService chatroomService;
+    private final IChatRoomUsersRelationService chatRoomUsersRelationService;
 
     @PostMapping("{chatroomUserCreatorId}")
     Mono<Chatroom> create(@PathVariable Long chatroomUserCreatorId, @RequestBody String chatroomName) {
         return chatroomService.create(chatroomUserCreatorId, chatroomName);
+    }
+
+    @PostMapping("addUser/{chatroomId}")
+    Mono<ChatroomUsersRelation> addUserToChatroom(@PathVariable String chatroomId, @RequestBody String userEmailToAdd) {
+        return chatRoomUsersRelationService.addUserToChatroom(chatroomId, userEmailToAdd);
     }
 
     @GetMapping("/participatingChatrooms/{userId}")
