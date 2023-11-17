@@ -18,8 +18,8 @@ public class ChatroomRestController {
     private final IChatroomService chatroomService;
 
     @PostMapping("{chatroomUserCreatorId}")
-    Mono<Chatroom> create(@PathVariable Long chatroomUserCreatorId) {
-        return chatroomService.create(chatroomUserCreatorId);
+    Mono<Chatroom> create(@PathVariable Long chatroomUserCreatorId, @RequestBody String chatroomName) {
+        return chatroomService.create(chatroomUserCreatorId, chatroomName);
     }
 
     @GetMapping("/participatingChatrooms/{userId}")

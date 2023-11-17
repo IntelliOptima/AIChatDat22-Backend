@@ -26,6 +26,8 @@ public class Chatroom {
 
     private Long chatroomUserCreatorId;
 
+    private String chatroomName;
+
     @Transient
     private List<User> users;
 

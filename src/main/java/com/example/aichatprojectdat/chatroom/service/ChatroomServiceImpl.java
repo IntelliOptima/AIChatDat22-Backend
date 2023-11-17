@@ -29,9 +29,10 @@ public class ChatroomServiceImpl implements IChatroomService {
     private final UserRepository userRepository;
     private final MessageRepository messageRepository;
 
-    public Mono<Chatroom> create(Long chatroomUserCreatorId) {
+    public Mono<Chatroom> create(Long chatroomUserCreatorId, String chatroomName) {
         return chatroomRepository.save(Chatroom.builder()
                         .id(UUID.randomUUID().toString())
+                        .chatroomName(chatroomName)
                         .chatroomUserCreatorId(chatroomUserCreatorId)
                         .build())
                 .flatMap(chatroom ->

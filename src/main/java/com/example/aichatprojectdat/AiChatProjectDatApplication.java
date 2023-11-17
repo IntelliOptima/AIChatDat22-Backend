@@ -27,29 +27,29 @@ public class AiChatProjectDatApplication {
         SpringApplication.run(AiChatProjectDatApplication.class, args);
     }
 
-//    @Bean
-//    CommandLineRunner commandLineRunner(
-//            IChatroomService chatroomService,
-//            IMessageService messageService,
-//            IUserService userService,
-//            IChatRoomUsersRelationService chatRoomUsersRelationService
-//    ) {
-//        return args -> {
-//            // Create Users and Chatrooms in sequence
-//            List<String> chatroomIds = Stream.of(2, 11)
-//                    .map(i -> UUID.randomUUID().toString())
-//                    .toList();
-//            userService.createOrReturnExistingUser(User.chatGPTUser()).block();
+    @Bean
+    CommandLineRunner commandLineRunner(
+            IChatroomService chatroomService,
+            IMessageService messageService,
+            IUserService userService,
+            IChatRoomUsersRelationService chatRoomUsersRelationService
+    ) {
+        return args -> {
+            // Create Users and Chatrooms in sequence
+            List<String> chatroomIds = Stream.of(2, 11)
+                    .map(i -> UUID.randomUUID().toString())
+                    .toList();
+            userService.create(User.chatGPTUser()).block();
 //
 //            chatroomIds.forEach(chatroomId -> {
-//                userService.createOrReturnExistingUser(User.of("test" + chatroomId + "@test.com", "alex", null))
+//                userService.createOrRetucrnExistingUser(User.of("test" + chatroomId + "@test.com", "alex", null))
 //                        .flatMap(user -> chatroomService.create(Chatroom.builder()
 //                                            .id(chatroomId)
 //                                            .chatroomUserCreatorId(user.id())
 //                                            .build())
 //                                            .flatMap(chatroom -> chatRoomUsersRelationService.create(
 //                                                    ChatroomUsersRelation.of(chatroom.getId(), user.id()))
-//                                                    .flatMap(chatroomUsersRelation -> userService.createOrReturnExistingUser(
+//                                                    .flatMap(chatroomUsersRelation -> userService.create(
 //                                                            User.of("anotherTest - "+ chatroomId + " - @test.dk", "TEQNO", null)))
 //                                                    .flatMap(anotherUser -> chatRoomUsersRelationService.create(ChatroomUsersRelation.of(chatroomId, anotherUser.id())))
 //
@@ -60,7 +60,8 @@ public class AiChatProjectDatApplication {
 //            });
 //
 //        };
-//    }
+        };
+    }
 
 
 }
