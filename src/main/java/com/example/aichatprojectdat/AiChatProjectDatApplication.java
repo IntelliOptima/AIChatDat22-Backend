@@ -27,19 +27,19 @@ public class AiChatProjectDatApplication {
         SpringApplication.run(AiChatProjectDatApplication.class, args);
     }
 
-    @Bean
-    CommandLineRunner commandLineRunner(
-            IChatroomService chatroomService,
-            IMessageService messageService,
-            IUserService userService,
-            IChatRoomUsersRelationService chatRoomUsersRelationService
-    ) {
-        return args -> {
-            // Create Users and Chatrooms in sequence
-            List<String> chatroomIds = Stream.of(2, 11)
-                    .map(i -> UUID.randomUUID().toString())
-                    .toList();
-            userService.create(User.chatGPTUser()).block();
+//    @Bean
+//    CommandLineRunner commandLineRunner(
+//            IChatroomService chatroomService,
+//            IMessageService messageService,
+//            IUserService userService,
+//            IChatRoomUsersRelationService chatRoomUsersRelationService
+//    ) {
+//        return args -> {
+//            // Create Users and Chatrooms in sequence
+//            List<String> chatroomIds = Stream.of(2, 11)
+//                    .map(i -> UUID.randomUUID().toString())
+//                    .toList();
+//            userService.create(User.chatGPTUser()).block();
 //
 //            chatroomIds.forEach(chatroomId -> {
 //                userService.createOrRetucrnExistingUser(User.of("test" + chatroomId + "@test.com", "alex", null))
@@ -60,8 +60,8 @@ public class AiChatProjectDatApplication {
 //            });
 //
 //        };
-        };
-    }
+//        };
+//    }
 
 
 }
