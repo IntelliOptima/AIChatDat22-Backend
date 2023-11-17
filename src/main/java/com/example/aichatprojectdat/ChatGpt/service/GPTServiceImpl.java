@@ -23,7 +23,7 @@ public class GPTServiceImpl implements IGPTService {
 
     public Mono<String> chat(String content) {
         return chatGPTService.chat(ChatCompletionRequest.of(content))
-                .map(chatgptReply -> "CHATGPT: " + chatgptReply.getReplyText());
+                .map(ChatCompletionResponse::getReplyText);
     }
 
     @Override
