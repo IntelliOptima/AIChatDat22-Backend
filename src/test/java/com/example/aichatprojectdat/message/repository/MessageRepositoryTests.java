@@ -47,7 +47,8 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
                 Chatroom.builder()
                         .id(UUID.randomUUID().toString())
                         .chatroomUserCreatorId(testUser.id())
-                        .build().getChatroomUserCreatorId())
+                        .build().getChatroomUserCreatorId(),
+                        "Test")
                 .block();
     }
 

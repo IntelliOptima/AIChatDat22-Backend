@@ -8,7 +8,7 @@ import reactor.core.publisher.Mono;
 
 public interface IChatroomService {
 
-    Mono<Chatroom> create(Long chatroomUserCreatorId);
+    Mono<Chatroom> create(Long chatroomUserCreatorId, String chatroomName);
 
     Flux<Chatroom> findAll();
 
