@@ -12,6 +12,7 @@ CREATE TABLE user
 CREATE TABLE chatroom (
   id                            VARCHAR(36) NOT NULL PRIMARY KEY,
   chatroom_user_creator_id      BIGINT,
+  chatroom_name                 TEXT,
   created_date                  TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
   last_modified_date            TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
   version                       INT,

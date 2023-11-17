@@ -12,6 +12,8 @@ spring:
     server:
       transport: websocket
       mapping-path: "/rsocket"
+
+
   lifecycle:
     timeout-per-shutdown-phase: 15s
 
