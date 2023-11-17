@@ -23,14 +23,14 @@ public class GPTServiceImpl implements IGPTService {
 
     public Mono<String> chat(String content) {
         return chatGPTService.chat(ChatCompletionRequest.of(content))
-                .map(chatgptReply -> "CHATGPT: " + chatgptReply.getReplyText());
+                .map(ChatCompletionResponse::getReplyText);
     }
 
     @Override
     public Flux<String> streamChat(String question ){
         this.chatCompletionRequest.addMessage(ChatMessage.userMessage(question));
         return chatGPTService.stream(chatCompletionRequest)
-                .map(chatgptReply -> "CHATGPT: " + chatgptReply.getReplyText());
+                .map(ChatCompletionResponse::getReplyText);
     }
 
 

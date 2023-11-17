@@ -10,9 +10,8 @@ spring:
     name: aichatdat-backend
   rsocket:
     server:
-      port: 6565
       transport: websocket
-
+      mapping-path: "/rsocket"
   lifecycle:
     timeout-per-shutdown-phase: 15s
 
@@ -39,4 +38,4 @@ logging:
 
 openai:
   api:
-    key: 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
+    key: ${GPT_API}
