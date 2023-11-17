@@ -61,7 +61,8 @@ public class ChatroomRepositoryTests extends AbstractIntegrationTest {
             Mono<Tuple2<Chatroom, ChatroomUsersRelation>> resultMono = chatroomService.create(Chatroom.builder()
                             .id(UUID.randomUUID().toString())
                             .chatroomUserCreatorId(user.id())
-                            .build().getChatroomUserCreatorId())
+                            .build().getChatroomUserCreatorId(),
+                            "Test")
 
                 .flatMap(chatroom -> {
                     System.out.println(chatroom.getId());
@@ -97,7 +98,8 @@ public class ChatroomRepositoryTests extends AbstractIntegrationTest {
                 Chatroom.builder()
                         .id(UUID.randomUUID().toString())
                         .chatroomUserCreatorId(creator.id())
-                        .build().getChatroomUserCreatorId());
+                        .build().getChatroomUserCreatorId(),
+                "Test2");
 
         // We use Mono.zip when we want to do something with both results, in this case, just to hold the chatroomId.
         Mono<Tuple2<Chatroom, ChatroomUsersRelation>> resultMono = chatroomMono.flatMap(createdChatroom ->
@@ -125,7 +127,9 @@ public class ChatroomRepositoryTests extends AbstractIntegrationTest {
         Chatroom chatroom = chatroomService.create(Chatroom.builder()
                         .id(UUID.randomUUID().toString())
                 .chatroomUserCreatorId(users.get(0).id())
-                .build().getChatroomUserCreatorId()).block();
+                .build().getChatroomUserCreatorId(),
+                        "Test3")
+                .block();
         assertNotNull(chatroom); // Ensure the chatroom was created
 
         // Here we assume chatroom IDs are generated correctly by the service/database
