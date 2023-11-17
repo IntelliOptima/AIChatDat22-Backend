@@ -58,6 +58,8 @@ public class ChatroomController {
                 .doOnError(e -> System.out.println("Error creating message: " + e.getMessage()))
                 .subscribe();
 
+
+
         // Retrieve or create a new sink for the chatroom
         Sinks.Many<Message> sink = chatroomSinks.computeIfAbsent(chatroomId, id -> Sinks.many().replay().latest());
 
