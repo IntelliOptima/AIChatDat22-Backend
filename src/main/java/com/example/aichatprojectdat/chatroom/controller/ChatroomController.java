@@ -78,7 +78,7 @@ public class ChatroomController {
         if (chatMessage.textMessage().toLowerCase().startsWith("@gpt")) {
             String question = chatMessage.textMessage().substring(4);
             StringBuilder gptResponseBuilder = new StringBuilder();
-            Sinks.Many<String> answerSink = gptAnswerSinks.computeIfAbsent(chatroomId, id -> Sinks.many().multicast().onBackpressureBuffer());
+            Sinks.Many<String> answerSink = gptAnswerSinks.computeIfAbsent(chatroomId, id -> Sinks.many().unicast().onBackpressureBuffer());
             sink.emitNext(Message.of(1L, "", chatroomId), Sinks.EmitFailureHandler.FAIL_FAST);
 
             gptService.streamChat(question)
