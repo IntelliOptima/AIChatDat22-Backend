@@ -44,9 +44,20 @@ public class ChatroomController {
             @DestinationVariable String chatroomId,
             Mono<String> requestMessage
     ) {
-
         return requestMessage.doOnNext(s -> System.out.println("Received message text: " + s))
                 .thenMany(chatroomSinks.computeIfAbsent(chatroomId, id -> Sinks.many().replay().latest()).asFlux()
+                        .doOnCancel(() -> {
+                            // Handle cancellation such as a user leaving a chatroom, if necessary
+                        }));
+    }
+
+    @MessageMapping("chat.gptstream.{chatroomId}")
+    public Flux<String> streamStringGpt(
+            @DestinationVariable String chatroomId,
+            Mono<String> requestMessage
+    ) {
+        return requestMessage.doOnNext(s -> System.out.println("Received message text: " + s))
+                .thenMany(gptAnswerSinks.computeIfAbsent(chatroomId, id -> Sinks.many().multicast().onBackpressureBuffer()).asFlux()
                         .doOnCancel(() -> {
                             // Handle cancellation such as a user leaving a chatroom, if necessary
                         }));
@@ -67,19 +78,19 @@ public class ChatroomController {
         if (chatMessage.textMessage().toLowerCase().startsWith("@gpt")) {
             String question = chatMessage.textMessage().substring(4);
             StringBuilder gptResponseBuilder = new StringBuilder();
-
-            gptService.chat(question)
+            sink.emitNext(Message.of(1L, "", chatroomId), Sinks.EmitFailureHandler.FAIL_FAST);
+            gptService.streamChat(question)
                     .doOnError(e -> System.out.println("Error getting GPT answer: " + e.getMessage()))
                     .subscribe(gptChunk -> {
                         gptResponseBuilder.append(gptChunk);
                         // Emit each chunk as it arrives for real-time streaming
-                        Sinks.Many<String> answerSink = gptAnswerSinks.computeIfAbsent(chatroomId, id -> Sinks.many().replay().latest());
+                        System.out.println("Chunk sent! " + gptChunk);
+                        Sinks.Many<String> answerSink = gptAnswerSinks.computeIfAbsent(chatroomId, id -> Sinks.many().multicast().onBackpressureBuffer());
                         answerSink.emitNext(gptChunk, Sinks.EmitFailureHandler.FAIL_FAST);
                     }, err -> {}, () -> {
                         // Once all chunks are received, create and store the complete GPT message
                         Message gptCompleteMessage = Message.of(1L, gptResponseBuilder.toString(), chatroomId);
                         messageService.create(gptCompleteMessage).subscribe();
-                        sink.emitNext(gptCompleteMessage, Sinks.EmitFailureHandler.FAIL_FAST);
                     });
         }
     }
