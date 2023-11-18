@@ -78,21 +78,30 @@ public class ChatroomController {
         if (chatMessage.textMessage().toLowerCase().startsWith("@gpt")) {
             String question = chatMessage.textMessage().substring(4);
             StringBuilder gptResponseBuilder = new StringBuilder();
+            Sinks.Many<String> answerSink = gptAnswerSinks.computeIfAbsent(chatroomId, id -> Sinks.many().unicast().onBackpressureBuffer());
             sink.emitNext(Message.of(1L, "", chatroomId), Sinks.EmitFailureHandler.FAIL_FAST);
+
             gptService.streamChat(question)
-                    .doOnError(e -> System.out.println("Error getting GPT answer: " + e.getMessage()))
+                    .doOnError(e -> {
+                        System.out.println("Error getting GPT answer: " + e.getMessage());
+                        resetState(gptResponseBuilder, answerSink);  // Reset state on error
+                    })
+                    .doFinally(signalType -> resetState(gptResponseBuilder, answerSink))  // Reset state after completion
                     .subscribe(gptChunk -> {
                         gptResponseBuilder.append(gptChunk);
-                        // Emit each chunk as it arrives for real-time streaming
                         System.out.println("Chunk sent! " + gptChunk);
-                        Sinks.Many<String> answerSink = gptAnswerSinks.computeIfAbsent(chatroomId, id -> Sinks.many().multicast().onBackpressureBuffer());
                         answerSink.emitNext(gptChunk, Sinks.EmitFailureHandler.FAIL_FAST);
                     }, err -> {}, () -> {
-                        // Once all chunks are received, create and store the complete GPT message
+                        answerSink.emitNext("Gpt Finished message", Sinks.EmitFailureHandler.FAIL_FAST);
                         Message gptCompleteMessage = Message.of(1L, gptResponseBuilder.toString(), chatroomId);
                         messageService.create(gptCompleteMessage).subscribe();
                     });
         }
+    }
+
+    // Method to reset the state
+    private void resetState(StringBuilder gptResponseBuilder, Sinks.Many<String> answerSink) {
+        gptResponseBuilder.setLength(0);
     }
 
 
