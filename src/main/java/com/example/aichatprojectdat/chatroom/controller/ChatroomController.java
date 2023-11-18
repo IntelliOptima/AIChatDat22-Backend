@@ -21,18 +21,17 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
+import reactor.core.scheduler.Schedulers;
 
 @Slf4j
 @Controller
 @RequiredArgsConstructor
 @CrossOrigin
 public class ChatroomController {
-    private final IMessageService messageService;
 
+    private final IMessageService messageService;
     private final GPTServiceImpl gptService;
 
-    private final IChatRoomUsersRelationService chatRoomUsersRelationService;
-    private final Map<String, List<RSocketRequester>> subscribers = new ConcurrentHashMap<>();
     private final Map<String, Sinks.Many<Message>> chatroomSinks = new ConcurrentHashMap<>();
     private final Map<String, Sinks.Many<String>> gptAnswerSinks = new ConcurrentHashMap<>();
 
@@ -45,10 +44,11 @@ public class ChatroomController {
             Mono<String> requestMessage
     ) {
         return requestMessage.doOnNext(s -> System.out.println("Received message text: " + s))
-                .thenMany(chatroomSinks.computeIfAbsent(chatroomId, id -> Sinks.many().replay().latest()).asFlux()
-                        .doOnCancel(() -> {
-                            // Handle cancellation such as a user leaving a chatroom, if necessary
-                        }));
+                .thenMany(chatroomSinks.computeIfAbsent(chatroomId, id ->
+                        Sinks.many()
+                                .multicast()
+                                .onBackpressureBuffer())
+                        .asFlux().onBackpressureBuffer());
     }
 
     @MessageMapping("chat.gptstream.{chatroomId}")
@@ -57,102 +57,54 @@ public class ChatroomController {
             Mono<String> requestMessage
     ) {
         return requestMessage.doOnNext(s -> System.out.println("Received message text: " + s))
-                .thenMany(gptAnswerSinks.computeIfAbsent(chatroomId, id -> Sinks.many().multicast().onBackpressureBuffer()).asFlux()
-                        .doOnCancel(() -> {
-                            // Handle cancellation such as a user leaving a chatroom, if necessary
-                        }));
+                .thenMany(gptAnswerSinks.computeIfAbsent(chatroomId, id ->
+                        Sinks.many()
+                                .multicast()
+                                .onBackpressureBuffer())
+                        .asFlux().onBackpressureBuffer());
     }
 
     // Method for clients to send messages to a chatroom
     @MessageMapping("chat.send.{chatroomId}")
     public void receiveMessage(@DestinationVariable String chatroomId, Message chatMessage, RSocketRequester requester) {
-        System.out.println(chatMessage.textMessage());
+        log.info("Received message: {}", chatMessage.textMessage());
 
         messageService.create(chatMessage)
-                .doOnError(e -> System.out.println("Error creating message: " + e.getMessage()))
+                .doOnError(e -> log.error("Error creating message: {}", e.getMessage()))
                 .subscribe();
 
-        Sinks.Many<Message> sink = chatroomSinks.computeIfAbsent(chatroomId, id -> Sinks.many().replay().latest());
-        sink.emitNext(chatMessage, Sinks.EmitFailureHandler.FAIL_FAST);
+        Sinks.Many<Message> messageSink = chatroomSinks.computeIfAbsent(chatroomId, id ->
+                Sinks.many()
+                        .multicast()
+                        .onBackpressureBuffer());
+
+        messageSink.emitNext(chatMessage, Sinks.EmitFailureHandler.FAIL_FAST);
 
         if (chatMessage.textMessage().toLowerCase().startsWith("@gpt")) {
-            String question = chatMessage.textMessage().substring(4);
-            StringBuilder gptResponseBuilder = new StringBuilder();
-            Sinks.Many<String> answerSink = gptAnswerSinks.computeIfAbsent(chatroomId, id -> Sinks.many().unicast().onBackpressureBuffer());
-            sink.emitNext(Message.of(1L, "", chatroomId), Sinks.EmitFailureHandler.FAIL_FAST);
-
-            gptService.streamChat(question)
-                    .doOnError(e -> {
-                        System.out.println("Error getting GPT answer: " + e.getMessage());
-                        resetState(gptResponseBuilder, answerSink);  // Reset state on error
-                    })
-                    .doFinally(signalType -> resetState(gptResponseBuilder, answerSink))  // Reset state after completion
-                    .subscribe(gptChunk -> {
-                        gptResponseBuilder.append(gptChunk);
-                        System.out.println("Chunk sent! " + gptChunk);
-                        answerSink.emitNext(gptChunk, Sinks.EmitFailureHandler.FAIL_FAST);
-                    }, err -> {}, () -> {
-                        answerSink.emitNext("Gpt Finished message", Sinks.EmitFailureHandler.FAIL_FAST);
-                        Message gptCompleteMessage = Message.of(1L, gptResponseBuilder.toString(), chatroomId);
-                        messageService.create(gptCompleteMessage).subscribe();
-                    });
+            messageSink.emitNext(Message.of(1L, "", chatroomId), Sinks.EmitFailureHandler.FAIL_FAST);
+            handleGptRequest(chatroomId, chatMessage.textMessage().substring(4));
         }
     }
 
-    // Method to reset the state
-    private void resetState(StringBuilder gptResponseBuilder, Sinks.Many<String> answerSink) {
-        gptResponseBuilder.setLength(0);
+    private void handleGptRequest(String chatroomId, String question) {
+        Sinks.Many<String> answerSink = gptAnswerSinks.computeIfAbsent(chatroomId, id -> Sinks.many().multicast().onBackpressureBuffer());
+        StringBuilder completeGPTMessage = new StringBuilder();
+
+        gptService.streamChat(question)
+                .doOnNext(gptChunk -> {
+                    log.info("GPT chunk received: {}", gptChunk);
+                    answerSink.emitNext(gptChunk, Sinks.EmitFailureHandler.FAIL_FAST);
+                    completeGPTMessage.append(gptChunk);
+                })
+                .doOnError(e -> log.error("Error in GPT streaming: {}", e.getMessage()))
+                .publishOn(Schedulers.boundedElastic())
+                .doOnComplete(() -> {
+                    answerSink.emitNext("Gpt Finished message", Sinks.EmitFailureHandler.FAIL_FAST);
+                    Message gptCompleteMessage = Message.of(1L, completeGPTMessage.toString(), chatroomId);
+                    messageService.create(gptCompleteMessage).subscribe();
+                    completeGPTMessage.setLength(0);
+                })
+                .subscribe();
     }
-
-
-
-    // Optionally, you might want to clean up sinks when they are no longer being used
-    // For example, when a chatroom becomes empty, you could remove its sink from the map
-    private void removeSinkIfNoSubscribers(String chatroomId) {
-        Sinks.Many<Message> sink = chatroomSinks.get(chatroomId);
-        if (sink != null && sink.currentSubscriberCount() == 0) {
-            chatroomSinks.remove(chatroomId);
-        }
-    }
-
-
-//    @MessageMapping("chat.{chatroomId}")
-//    public Flux<Message> chatroom (
-//            @DestinationVariable String chatroomId,
-//            Flux<Message> messages,
-//            RSocketRequester requester
-//    ) {
-//
-////        return messages.flatMap(message -> {
-////            Long userId = message.userId();
-////            return chatRoomUsersRelationService.isUserPartOfChatroom(userId, chatroomId)
-////                    .flatMapMany(userRelationExist -> {
-////                        if (userRelationExist) {
-////                            subscribers.computeIfAbsent(chatroomId, id -> new ArrayList<>()).add(requester);
-////                            return Flux.just(ResponseEntity.ok(message));
-////                        } else {
-////                            return Flux.just(ResponseEntity.badRequest().body(Message.empty()));
-////                        }
-////                    });
-////        });
-//    }
-
-
-
-    /*
-    FIRST TRY OF RSOCKET CHATROOM CHANNEL
-    @MessageMapping("chat.{chatroomId}")
-    public Mono<ResponseEntity<String>> subscribe(@DestinationVariable Long chatroomId, User user) {
-        return chatRoomUsersRelationService.isUserPartOfChatroom(user.id(), chatroomId)
-                .map(userRelationExist -> {
-                    if (userRelationExist) {
-                        subscribers.computeIfAbsent(chatroomId, id -> new ArrayList<>()).add(requester);
-                        return ResponseEntity.ok().body("Subscribed to chatroom " + chatroomId);
-                    } else {
-                        return ResponseEntity.badRequest().body("User is not part of chatroom " + chatroomId);
-                    }
-                });
-    }
-*/
 
 }
