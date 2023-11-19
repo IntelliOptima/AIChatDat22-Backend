@@ -1,7 +1,9 @@
 package com.example.aichatprojectdat.chatroom.controller;
 
 
+import java.time.Instant;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.example.aichatprojectdat.ChatGpt.service.GPTServiceImpl;
@@ -67,8 +69,8 @@ public class ChatroomController {
         if (chatMessage.textMessage().toLowerCase().startsWith("@gpt")) {
             // Emit an empty placeholder message for the GPT response
             log.info("Emitting GPT Response Start message");
-            Message placeholderMessage = Message.of(1L, "", chatMessage.chatroomId());
-            sink.emitNext(placeholderMessage, Sinks.EmitFailureHandler.FAIL_FAST);
+            //Message placeholderMessage = Message.of(1L, "startingStream", chatMessage.chatroomId());
+            //sink.emitNext(placeholderMessage, Sinks.EmitFailureHandler.FAIL_FAST);
 
             handleGptMessage(chatMessage, sink);
         }
@@ -83,17 +85,21 @@ public class ChatroomController {
 
     public void handleGptMessage(Message chatMessage, Sinks.Many<Message> sink) {
         StringBuilder gptAnswer = new StringBuilder();
+        
+        String gptMessageId = UUID.randomUUID().toString();
+        Instant createdDate = Instant.now();
 
+        
         gptService.streamChat(chatMessage.textMessage())
                 .doOnNext(chunk -> {
                     String updatedContent = gptAnswer.append(chunk).toString();
-                    sink.emitNext(Message.of(1L, updatedContent, chatMessage.chatroomId()), Sinks.EmitFailureHandler.FAIL_FAST);
+                    sink.emitNext(Message.ofGPTStream(gptMessageId,1L, updatedContent, chatMessage.chatroomId(), createdDate), Sinks.EmitFailureHandler.FAIL_FAST);
                 })
                 .doOnError(e -> log.error("Error in GPT streaming: {}", e.getMessage()))
                 .publishOn(Schedulers.boundedElastic())
                 .doFinally(signalType -> {
-                    sink.emitNext(Message.of(1L, "Gpt Finished message", chatMessage.chatroomId()), Sinks.EmitFailureHandler.FAIL_FAST);
-                    Message gptCompleteMessage = Message.of(1L, gptAnswer.toString(), chatMessage.chatroomId());
+                    sink.emitNext(Message.ofGPTStream(gptMessageId,1L, "Gpt Finished message", chatMessage.chatroomId(), createdDate), Sinks.EmitFailureHandler.FAIL_FAST);
+                    Message gptCompleteMessage = Message.ofGPTStream(gptMessageId,1L, gptAnswer.toString(), chatMessage.chatroomId(), createdDate);
                     messageService.create(gptCompleteMessage).subscribe();
                     gptAnswer.setLength(0);
                 }).subscribe();
