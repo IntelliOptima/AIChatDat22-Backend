@@ -1,6 +1,6 @@
 package com.example.aichatprojectdat.chatroom.controller;
 
-import java.util.List;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -8,10 +8,9 @@ import com.example.aichatprojectdat.ChatGpt.service.GPTServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.rsocket.RSocketRequester;
+
 import org.springframework.stereotype.Controller;
 
-import com.example.aichatprojectdat.chatroom.service.IChatRoomUsersRelationService;
 import com.example.aichatprojectdat.message.model.Message;
 import com.example.aichatprojectdat.message.service.IMessageService;
 
@@ -33,7 +32,6 @@ public class ChatroomController {
     private final GPTServiceImpl gptService;
 
     private final Map<String, Sinks.Many<Message>> chatroomSinks = new ConcurrentHashMap<>();
-    private final Map<String, Sinks.Many<String>> gptAnswerSinks = new ConcurrentHashMap<>();
 
     //_______________________ RSOCKET -> CHANNEL _______________________________
 
@@ -45,66 +43,61 @@ public class ChatroomController {
     ) {
         return requestMessage.doOnNext(s -> System.out.println("Received message text: " + s))
                 .thenMany(chatroomSinks.computeIfAbsent(chatroomId, id ->
-                        Sinks.many()
-                                .multicast()
-                                .onBackpressureBuffer())
+                                Sinks.many()
+                                        .replay()
+                                        .latest())
                         .asFlux().onBackpressureBuffer());
+
     }
 
-    @MessageMapping("chat.gptstream.{chatroomId}")
-    public Flux<String> streamStringGpt(
-            @DestinationVariable String chatroomId,
-            Mono<String> requestMessage
-    ) {
-        return requestMessage.doOnNext(s -> System.out.println("Received message text: " + s))
-                .thenMany(gptAnswerSinks.computeIfAbsent(chatroomId, id ->
-                        Sinks.many()
-                                .multicast()
-                                .onBackpressureBuffer())
-                        .asFlux().onBackpressureBuffer());
-    }
 
     // Method for clients to send messages to a chatroom
     @MessageMapping("chat.send.{chatroomId}")
-    public void receiveMessage(@DestinationVariable String chatroomId, Message chatMessage, RSocketRequester requester) {
+    public void receiveMessage(@DestinationVariable String chatroomId, Message chatMessage) {
         log.info("Received message: {}", chatMessage.textMessage());
 
-        messageService.create(chatMessage)
-                .doOnError(e -> log.error("Error creating message: {}", e.getMessage()))
-                .subscribe();
-
-        Sinks.Many<Message> messageSink = chatroomSinks.computeIfAbsent(chatroomId, id ->
+        Sinks.Many<Message> sink = chatroomSinks.computeIfAbsent(chatroomId, id ->
                 Sinks.many()
                         .multicast()
                         .onBackpressureBuffer());
 
-        messageSink.emitNext(chatMessage, Sinks.EmitFailureHandler.FAIL_FAST);
+        emitReceivedMessage(chatMessage, sink);
 
+        // Check if the message is a GPT command
         if (chatMessage.textMessage().toLowerCase().startsWith("@gpt")) {
-            messageSink.emitNext(Message.of(1L, "", chatroomId), Sinks.EmitFailureHandler.FAIL_FAST);
-            handleGptRequest(chatroomId, chatMessage.textMessage().substring(4));
+            // Emit an empty placeholder message for the GPT response
+            log.info("Emitting GPT Response Start message");
+            Message placeholderMessage = Message.of(1L, "", chatMessage.chatroomId());
+            sink.emitNext(placeholderMessage, Sinks.EmitFailureHandler.FAIL_FAST);
+
+            handleGptMessage(chatMessage, sink);
         }
     }
 
-    private void handleGptRequest(String chatroomId, String question) {
-        Sinks.Many<String> answerSink = gptAnswerSinks.computeIfAbsent(chatroomId, id -> Sinks.many().multicast().onBackpressureBuffer());
-        StringBuilder completeGPTMessage = new StringBuilder();
+    public void emitReceivedMessage(Message chatMessage, Sinks.Many<Message> sink) {
+        messageService.create(chatMessage).subscribe();
 
-        gptService.streamChat(question)
-                .doOnNext(gptChunk -> {
-                    log.info("GPT chunk received: {}", gptChunk);
-                    answerSink.emitNext(gptChunk, Sinks.EmitFailureHandler.FAIL_FAST);
-                    completeGPTMessage.append(gptChunk);
+        log.info("Emitting message {}", chatMessage);
+        sink.emitNext(chatMessage, Sinks.EmitFailureHandler.FAIL_FAST);
+    }
+
+    public void handleGptMessage(Message chatMessage, Sinks.Many<Message> sink) {
+        StringBuilder gptAnswer = new StringBuilder();
+
+        gptService.streamChat(chatMessage.textMessage())
+                .doOnNext(chunk -> {
+                    String updatedContent = gptAnswer.append(chunk).toString();
+                    sink.emitNext(Message.of(1L, updatedContent, chatMessage.chatroomId()), Sinks.EmitFailureHandler.FAIL_FAST);
                 })
                 .doOnError(e -> log.error("Error in GPT streaming: {}", e.getMessage()))
                 .publishOn(Schedulers.boundedElastic())
-                .doOnComplete(() -> {
-                    answerSink.emitNext("Gpt Finished message", Sinks.EmitFailureHandler.FAIL_FAST);
-                    Message gptCompleteMessage = Message.of(1L, completeGPTMessage.toString(), chatroomId);
+                .doFinally(signalType -> {
+                    sink.emitNext(Message.of(1L, "Gpt Finished message", chatMessage.chatroomId()), Sinks.EmitFailureHandler.FAIL_FAST);
+                    Message gptCompleteMessage = Message.of(1L, gptAnswer.toString(), chatMessage.chatroomId());
                     messageService.create(gptCompleteMessage).subscribe();
-                    completeGPTMessage.setLength(0);
-                })
-                .subscribe();
+                    gptAnswer.setLength(0);
+                }).subscribe();
     }
+
 
 }
