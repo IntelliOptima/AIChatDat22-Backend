@@ -39,6 +39,9 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
 
     private User testUser;
     private Chatroom testChatroom;
+    private final String[] UUIDS_FOR_MESSAGES = IntStream.range(0, 10)
+            .mapToObj(i -> UUID.randomUUID().toString())
+            .toArray(String[]::new);
 
     @BeforeEach
     void createChatRoom() {
@@ -55,7 +58,9 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
 
     void addMessagesToDbForTest() {
         IntStream.range(0, 10).forEach(i -> {
-            messageService.create(Message.of(testUser.id(), "Test", testChatroom.getId())).block();
+            messageService.create(
+                    Message.emptyButWithIdForTest
+                            (UUIDS_FOR_MESSAGES[i], testUser.id(), "Test", testChatroom.getId())).block();
         });
     }
 
@@ -69,7 +74,7 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
 
         StepVerifier.create(messageMono)
                 .consumeNextWith(message -> {
-                    assertTrue(message.id() > 0);
+                    assertFalse(message.id().isEmpty());
                     assertEquals(message.textMessage(), mockMessage);
                     assertEquals(message.userId(), userId);
                     assertEquals(message.chatroomId(), chatroomId);
@@ -124,11 +129,11 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
     void testDeleteMessageByIdSuccess() {
         addMessagesToDbForTest();
         long userId = testUser.id();
-        long messageId = 1L;
+        String messageId = UUIDS_FOR_MESSAGES[0];
 
         // First ensure the message is there
         StepVerifier.create(messageService.getMessageById(messageId))
-                .expectNextMatches(message -> message.id() == messageId)
+                .expectNextMatches(message -> message.id().equals(messageId))
                 .verifyComplete();
 
         // Delete the message
@@ -137,12 +142,12 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
 
         // Fetch all messages for the user and ensure the deleted message is not among them
         Mono<List<Message>> messagesListMinusDeleted = messageService.getAllMessagesByUserId(userId)
-                .filter(message -> message.id() != messageId) // This ensures we don't get the deleted message
+                .filter(message -> !message.id().equals(messageId)) // This ensures we don't get the deleted message
                 .collectList();
 
         StepVerifier.create(messagesListMinusDeleted)
                 .assertNext(messages -> assertFalse(messages.stream()
-                                .anyMatch(message -> message.id() == messageId),
+                                .anyMatch(message -> message.id().equals(messageId)),
                         "Deleted message should not be in the list"))
                 .verifyComplete();
     }

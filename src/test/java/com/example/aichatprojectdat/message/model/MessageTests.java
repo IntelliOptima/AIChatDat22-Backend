@@ -16,7 +16,7 @@ public class MessageTests {
 
         Message message = Message.of(userId, mockMessage, chatroomId);
 
-        assertNull(message.id(), "Id should be handled by Database, and always be null on creation");
+        assertNotNull(message.id(), "Id should be handled by Database, and always be null on creation");
         assertNull(message.createdDate(), "Id should be handled by Database, and always be null on creation");
         assertEquals(message.userId(), userId);
         assertEquals(message.textMessage(), mockMessage);

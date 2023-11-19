@@ -2,6 +2,7 @@ package com.example.aichatprojectdat.message.model;
 
 
 import java.time.Instant;
+import java.util.UUID;
 
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -16,7 +17,7 @@ import jakarta.validation.constraints.NotNull;
 @Table
 public record Message(
         @Id
-        Long id,
+        String id,
 
         Long userId,
 
@@ -34,10 +35,14 @@ public record Message(
         Long version
 ) {
         public static Message of(Long userId, String textMessage, String chatroomId ){
-                return new Message(null, userId, textMessage, chatroomId, null, null, null);
+                return new Message(UUID.randomUUID().toString(), userId, textMessage, chatroomId, null, null, null);
         }
 
-        public static Message empty() {
-                return new Message(null, null, null, null, null, null, null);
+        public static Message ofGPTStream(String messageId, Long userId, String textMessage, String chatroomId, Instant createdDate ) {
+                        return new Message(messageId, userId, textMessage, chatroomId, createdDate, null, null);
+        }
+
+        public static Message emptyButWithIdForTest(String uuid, Long userId, String textMessage, String chatroomId) {
+                return new Message(uuid, userId, textMessage, chatroomId, null, null, null);
         }
 }

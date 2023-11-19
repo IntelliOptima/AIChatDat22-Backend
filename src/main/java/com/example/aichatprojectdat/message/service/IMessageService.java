@@ -12,13 +12,13 @@ public interface IMessageService {
 
     Mono<Message> create(Message message);
 
-    Mono<Message> getMessageById(Long messageId);
+    Mono<Message> getMessageById(String messageId);
 
     Flux<Message> getMessages();
 
     Flux<Message> getMessagesByChatroomId(String chatroomId);
 
-    Mono<Void> deleteById(long messageId);
+    Mono<Void> deleteById(String messageId);
 
     Flux<Message> getAllMessagesByUserId(long userId);
 }
