@@ -67,8 +67,8 @@ public class ChatroomController {
         if (chatMessage.textMessage().toLowerCase().startsWith("@gpt")) {
             // Emit an empty placeholder message for the GPT response
             log.info("Emitting GPT Response Start message");
-            Message placeholderMessage = Message.of(1L, "", chatMessage.chatroomId());
-            sink.emitNext(placeholderMessage, Sinks.EmitFailureHandler.FAIL_FAST);
+            //Message placeholderMessage = Message.of(1L, "", chatMessage.chatroomId());
+            //sink.emitNext(placeholderMessage, Sinks.EmitFailureHandler.FAIL_FAST);
 
             handleGptMessage(chatMessage, sink);
         }
