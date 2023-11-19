@@ -7,8 +7,8 @@ import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 
 @Repository
-public interface MessageRepository extends R2dbcRepository<Message, Long> {
-    Flux<Message> findAllByUserId(long userId);
+public interface MessageRepository extends R2dbcRepository<Message, String> {
+    Flux<Message> findAllByUserIdOrderByCreatedDateDesc(long userId);
 
     Flux<Message> findAllByChatroomId(String chatroomId);
 }
