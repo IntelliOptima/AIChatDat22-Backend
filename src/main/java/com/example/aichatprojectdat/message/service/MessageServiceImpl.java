@@ -23,7 +23,7 @@ public class MessageServiceImpl implements IMessageService {
     private final MessageRepository messageRepository;
 
     @Override
-    public Mono<Message> getMessageById(Long messageId) {
+    public Mono<Message> getMessageById(String messageId) {
         return messageRepository.findById(messageId);
     }
 
@@ -38,13 +38,13 @@ public class MessageServiceImpl implements IMessageService {
     }
 
     @Override
-    public Mono<Void> deleteById(long messageId) {
+    public Mono<Void> deleteById(String messageId) {
         return messageRepository.deleteById(messageId);
     }
 
     @Override
     public Flux<Message> getAllMessagesByUserId(long userId) {
-        return messageRepository.findAllByUserId(userId);
+        return messageRepository.findAllByUserIdOrderByCreatedDateDesc(userId);
     }
 
     @Override

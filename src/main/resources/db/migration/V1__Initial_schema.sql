@@ -39,7 +39,7 @@ CREATE TABLE chatroom_users_relation (
 
 
 CREATE TABLE message (
-  id                            BIGINT AUTO_INCREMENT PRIMARY KEY,
+  id                            VARCHAR(36) NOT NULL PRIMARY KEY,
   user_id                       BIGINT,
   text_message                  TEXT NOT NULL,
   chatroom_id                   VARCHAR(36) NOT NULL,
