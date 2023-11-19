@@ -5,23 +5,15 @@ import com.example.aichatprojectdat.chatroom.model.Chatroom;
 import com.example.aichatprojectdat.chatroom.model.ChatroomUsersRelation;
 import com.example.aichatprojectdat.chatroom.repository.ChatroomRepository;
 import com.example.aichatprojectdat.chatroom.repository.ChatroomUsersRelationRepository;
-import com.example.aichatprojectdat.message.model.Message;
 import com.example.aichatprojectdat.message.repository.MessageRepository;
-import com.example.aichatprojectdat.user.model.User;
 import com.example.aichatprojectdat.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -80,7 +72,7 @@ public class ChatroomServiceImpl implements IChatroomService {
                             .then(Mono.just(chatroom))
                             .doOnNext(c -> System.out.println("Chatroom with users set: " + c))
                             // Proceed with fetching messages only after users have been set
-                            .then(messageRepository.findAllByChatroomId(chatroom.getId())
+                            .then(messageRepository.findAllByChatroomIdOrderByCreatedDateAsc(chatroom.getId())
                                     .collectList()
                                     .doOnNext(messages -> {
                                         System.out.println("Messages collected for chatroom: " + messages);
