@@ -69,15 +69,15 @@ public class ChatroomController {
         if (chatMessage.textMessage().toLowerCase().startsWith("@gpt")) {
             // Emit an empty placeholder message for the GPT response
             log.info("Emitting GPT Response Start message");
-            //Message placeholderMessage = Message.of(1L, "startingStream", chatMessage.chatroomId());
-            //sink.emitNext(placeholderMessage, Sinks.EmitFailureHandler.FAIL_FAST);
+
 
             handleGptMessage(chatMessage, sink);
         }
     }
 
     public void emitReceivedMessage(Message chatMessage, Sinks.Many<Message> sink) {
-        messageService.create(chatMessage).subscribe();
+        Message receivedMessage = Message.of(chatMessage.userId(), chatMessage.textMessage(), chatMessage.chatroomId());
+        messageService.create(receivedMessage).subscribe();
 
         log.info("Emitting message {}", chatMessage);
         sink.emitNext(chatMessage, Sinks.EmitFailureHandler.FAIL_FAST);
