@@ -1,7 +1,6 @@
 package com.example.aichatprojectdat.chatroom.service;
 
 import com.example.aichatprojectdat.chatroom.model.Chatroom;
-import com.example.aichatprojectdat.chatroom.model.ChatroomUsersRelation;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -17,4 +16,6 @@ public interface IChatroomService {
     Flux<Chatroom> findAllParticipatingChatrooms(Long userid);
 
     Flux<Chatroom> findAllByCreatorId(Long creatorId);
+
+    Mono<Void> delete(Chatroom chatroom);
 }

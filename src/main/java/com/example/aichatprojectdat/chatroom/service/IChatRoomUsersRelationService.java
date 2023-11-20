@@ -15,4 +15,6 @@ public interface IChatRoomUsersRelationService {
     Mono<Boolean> isUserPartOfChatroom(Long userId, String chatroomId);
 
     Mono<ChatroomUsersRelation> addUserToChatroom(String chatroomId, String userEmailToAdd);
+
+    Mono<Void> delete(ChatroomUsersRelation chatroomUsersRelation);
 }

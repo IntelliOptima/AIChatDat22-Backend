@@ -95,4 +95,9 @@ public class ChatroomServiceImpl implements IChatroomService {
     public Flux<Chatroom> findAllByCreatorId(Long creatorId) {
         return chatroomRepository.findAllByChatroomUserCreatorId(creatorId);
     }
+
+
+    public Mono<Void> delete(Chatroom chatroom) {
+        return chatroomRepository.delete(chatroom);
+    }
 }
