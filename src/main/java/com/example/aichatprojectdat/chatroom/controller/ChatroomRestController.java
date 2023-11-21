@@ -45,4 +45,17 @@ public class ChatroomRestController {
         return chatroomService.findAllByCreatorId(creatorId);
     }
 
+    @PostMapping("/delete/{chatroomId}")
+    public Mono<ResponseEntity<Mono<Chatroom>>> deleteChatroom(@PathVariable String chatroomId) {
+        return Mono.just(ResponseEntity.ok().body(chatroomService.delete(chatroomId)));
+    }
+
+    @PostMapping("/leave/{chatroomId}/{userId}")
+    public Mono<ResponseEntity<Mono<Void>>> deleteChatroom(@PathVariable String chatroomId, @PathVariable Long userId) {
+        return Mono.just(ResponseEntity.ok().body(chatRoomUsersRelationService.leaveChatroom(chatroomId, userId)));
+    }
+
+
+
+
 }
