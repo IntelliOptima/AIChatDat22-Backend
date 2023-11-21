@@ -6,7 +6,13 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.example.aichatprojectdat.ChatGpt.service.GPTServiceImpl;
+import com.example.aichatprojectdat.OpenAIModels.dall_e.model.generation.ImageGenerationRequest;
+import com.example.aichatprojectdat.OpenAIModels.dall_e.service.IDALL_E3ServiceStandard;
+import com.example.aichatprojectdat.OpenAIModels.dall_e.spring.service.interfaces.IDALL_EService;
+import com.example.aichatprojectdat.OpenAIModels.gpt.service.GPT3ServiceImpl;
+import com.example.aichatprojectdat.OpenAIModels.gpt.service.GPT4ServiceImpl;
+import com.example.aichatprojectdat.OpenAIModels.gpt.service.interfaces.IGPT3Service;
+import com.example.aichatprojectdat.OpenAIModels.gpt.service.interfaces.IGPT4Service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -31,7 +37,9 @@ import reactor.core.scheduler.Schedulers;
 public class ChatroomController {
 
     private final IMessageService messageService;
-    private final GPTServiceImpl gptService;
+    private final IGPT3Service gpt3Service;
+    private final IGPT4Service gpt4Service;
+    private final IDALL_E3ServiceStandard iDallE3ServiceStandard;
 
     private final Map<String, Sinks.Many<Message>> chatroomSinks = new ConcurrentHashMap<>();
 
@@ -67,11 +75,13 @@ public class ChatroomController {
 
         // Check if the message is a GPT command
         if (chatMessage.textMessage().toLowerCase().startsWith("@gpt")) {
-            // Emit an empty placeholder message for the GPT response
-            log.info("Emitting GPT Response Start message");
-
-
+            log.info("Emitting GPT Response");
             handleGptMessage(chatMessage, sink);
+        }
+
+        if (chatMessage.textMessage().toLowerCase().startsWith("@dalle")) {
+            log.info("Emitting DallE Response");
+            handleDallEMessage(chatMessage, sink);
         }
     }
 
@@ -88,9 +98,8 @@ public class ChatroomController {
         
         String gptMessageId = UUID.randomUUID().toString();
         Instant createdDate = Instant.now();
-
         
-        gptService.streamChat(chatMessage.textMessage())
+        gpt4Service.streamChat(chatMessage.textMessage())
                 .doOnNext(chunk -> {
                     String updatedContent = gptAnswer.append(chunk).toString();
                     sink.emitNext(Message.ofGPTStream(gptMessageId,1L, updatedContent, chatMessage.chatroomId(), createdDate), Sinks.EmitFailureHandler.FAIL_FAST);
@@ -102,6 +111,18 @@ public class ChatroomController {
                     Message gptCompleteMessage = Message.ofGPTStream(gptMessageId,1L, gptAnswer.toString(), chatMessage.chatroomId(), createdDate);
                     messageService.create(gptCompleteMessage).subscribe();
                     gptAnswer.setLength(0);
+                }).subscribe();
+    }
+
+
+    public void handleDallEMessage(Message chatMessage, Sinks.Many<Message> sink) {
+        iDallE3ServiceStandard.generateImage(chatMessage.textMessage())
+                .doFirst(() -> System.out.println(ImageGenerationRequest.of(chatMessage.textMessage()).toString()))
+                .publishOn(Schedulers.boundedElastic())
+                .doOnNext(response -> {
+                    Message dalleMessage = Message.of(2L, response.getImageList().get(0).getUrl(), chatMessage.chatroomId());
+                    sink.emitNext(dalleMessage,Sinks.EmitFailureHandler.FAIL_FAST);
+                    messageService.create(dalleMessage).subscribe();
                 }).subscribe();
     }
 
