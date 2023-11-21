@@ -1,22 +1,17 @@
 package com.example.aichatprojectdat;
 
-import com.example.aichatprojectdat.chatroom.model.Chatroom;
-import com.example.aichatprojectdat.chatroom.model.ChatroomUsersRelation;
-import com.example.aichatprojectdat.chatroom.service.IChatRoomUsersRelationService;
-import com.example.aichatprojectdat.chatroom.service.IChatroomService;
-import com.example.aichatprojectdat.message.service.IMessageService;
 import com.example.aichatprojectdat.user.model.User;
 import com.example.aichatprojectdat.user.service.IUserService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.data.r2dbc.config.EnableR2dbcAuditing;
 
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Stream;
+import java.util.Arrays;
 
 @SpringBootApplication
 @EnableR2dbcAuditing
@@ -24,7 +19,6 @@ import java.util.stream.Stream;
 public class AiChatProjectDatApplication {
 
     public static void main(String[] args) {
-
         SpringApplication.run(AiChatProjectDatApplication.class, args);
     }
 
@@ -32,6 +26,7 @@ public class AiChatProjectDatApplication {
     CommandLineRunner commandLineRun(IUserService userService) {
         return args -> {
             userService.create(User.chatGPTUser()).block();
+            userService.create(User.DallE()).block();
         };
     }
 

@@ -10,10 +10,6 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 
-import com.example.aichatprojectdat.config.aspects.AdviceAnnotations.ValidateParams;
-
-import jakarta.validation.constraints.NotNull;
-
 @Table
 public record Message(
         @Id
