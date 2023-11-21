@@ -9,6 +9,7 @@ import com.example.aichatprojectdat.message.repository.MessageRepository;
 import com.example.aichatprojectdat.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
@@ -94,5 +95,17 @@ public class ChatroomServiceImpl implements IChatroomService {
 
     public Flux<Chatroom> findAllByCreatorId(Long creatorId) {
         return chatroomRepository.findAllByChatroomUserCreatorId(creatorId);
+    }
+
+
+    public Mono<Chatroom> delete(String chatroomId) {
+        return chatroomUsersRelationRepository.findAllByChatroomId(chatroomId)
+                .flatMap(chatroomUsersRelation -> chatroomUsersRelationRepository.delete(chatroomUsersRelation)
+                        .then(Mono.empty()))
+                .switchIfEmpty(Mono.empty())
+                .then(chatroomRepository.findById(chatroomId)
+                        .flatMap(chatroomRepository::delete)
+                        .then(Mono.empty())
+                );
     }
 }

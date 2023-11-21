@@ -45,6 +45,17 @@ public class ChatroomUsersRelationServiceImpl implements IChatRoomUsersRelationS
     }
 
     @Override
+    public Mono<Void> delete(ChatroomUsersRelation chatroomUsersRelation) {
+        return chatroomUsersRelationRepository.delete(chatroomUsersRelation);
+    }
+
+    @Override
+    public Mono<Void> leaveChatroom(String chatroomId, Long userId) {
+        return chatroomUsersRelationRepository.findByUserIdAndChatroomId(userId, chatroomId)
+                .flatMap(chatroomUsersRelationRepository::delete);
+    }
+
+    @Override
     public Mono<Boolean> isUserPartOfChatroom(Long userId, String chatroomId) {
         return chatroomUsersRelationRepository.findByUserIdAndChatroomId(userId, chatroomId)
                 .map(chatroomUserRelation -> true)

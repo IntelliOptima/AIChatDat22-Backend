@@ -10,8 +10,9 @@ import com.example.aichatprojectdat.config.aspects.AdviceExeptions.NullArgumentE
 @Aspect
 public class ValidationAspect {
 
-    @Pointcut("@annotation(ValidateParams)")
+    @Pointcut("@annotation(com.example.aichatprojectdat.config.aspects.AdviceAnnotations.ValidateParams)")
     public void validateParams() {}
+
 
 
     // Advice that runs before the methods matched by the pointcut
@@ -23,5 +24,6 @@ public class ValidationAspect {
             }
         }
     }
+
 
 }
