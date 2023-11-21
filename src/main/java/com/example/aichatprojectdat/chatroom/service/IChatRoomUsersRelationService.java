@@ -17,4 +17,6 @@ public interface IChatRoomUsersRelationService {
     Mono<ChatroomUsersRelation> addUserToChatroom(String chatroomId, String userEmailToAdd);
 
     Mono<Void> delete(ChatroomUsersRelation chatroomUsersRelation);
+
+    Mono<Void> leaveChatroom(String chatroomId, Long userId);
 }

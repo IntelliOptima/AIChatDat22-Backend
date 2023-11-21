@@ -17,5 +17,6 @@ public interface IChatroomService {
 
     Flux<Chatroom> findAllByCreatorId(Long creatorId);
 
-    Mono<Void> delete(Chatroom chatroom);
+    Mono<Chatroom> delete(String chatroomId);
+
 }
