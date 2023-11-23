@@ -28,6 +28,8 @@ public class Chatroom {
 
     private String chatroomName;
 
+    private String color;
+
     @Transient
     private List<User> users;
 

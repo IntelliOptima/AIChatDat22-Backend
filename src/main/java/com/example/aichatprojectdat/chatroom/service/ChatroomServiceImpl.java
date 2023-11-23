@@ -29,15 +29,16 @@ public class ChatroomServiceImpl implements IChatroomService {
 
 
     @Transactional
-    public Mono<Chatroom> create(Long chatroomUserCreatorId, String chatroomName) {
+    public Mono<Chatroom> create(Chatroom newChatroom) {
         return chatroomRepository.save(Chatroom.builder()
                         .id(UUID.randomUUID().toString())
-                        .chatroomName(chatroomName)
-                        .chatroomUserCreatorId(chatroomUserCreatorId)
+                        .chatroomName(newChatroom.getChatroomName())
+                        .chatroomUserCreatorId(newChatroom.getChatroomUserCreatorId())
+                        .color(newChatroom.getColor())
                         .build())
                 .flatMap(chatroom -> {
                     Mono<ChatroomUsersRelation> chatroomRelation = chatroomUsersRelationRepository
-                            .save(ChatroomUsersRelation.of(chatroom.getId(), chatroomUserCreatorId));
+                            .save(ChatroomUsersRelation.of(chatroom.getId(), newChatroom.getChatroomUserCreatorId()));
 
                     Mono<ChatroomUsersRelation> GPTRelation = chatroomUsersRelationRepository.save(
                             ChatroomUsersRelation.of(chatroom.getId(), 1L));

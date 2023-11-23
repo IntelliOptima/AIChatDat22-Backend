@@ -6,6 +6,7 @@ import com.example.aichatprojectdat.chatroom.service.IChatRoomUsersRelationServi
 import com.example.aichatprojectdat.chatroom.service.IChatroomService;
 import com.example.aichatprojectdat.message.model.Message;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,14 +16,16 @@ import reactor.core.publisher.Mono;
 @RestController
 @RequiredArgsConstructor
 @CrossOrigin
+@Slf4j
 @RequestMapping("/api/v1/chatroom")
 public class ChatroomRestController {
     private final IChatroomService chatroomService;
     private final IChatRoomUsersRelationService chatRoomUsersRelationService;
 
-    @PostMapping("{chatroomUserCreatorId}")
-    Mono<Chatroom> create(@PathVariable Long chatroomUserCreatorId, @RequestBody String chatroomName) {
-        return chatroomService.create(chatroomUserCreatorId, chatroomName);
+    @PostMapping
+    Mono<Chatroom> create(@RequestBody Chatroom newChatroom) {
+        log.info("Creating new chatroom: " + newChatroom);
+        return chatroomService.create(newChatroom);
     }
 
     @PostMapping("addUser/{chatroomId}")

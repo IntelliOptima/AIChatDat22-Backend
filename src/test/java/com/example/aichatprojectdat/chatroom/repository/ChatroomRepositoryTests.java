@@ -61,8 +61,8 @@ public class ChatroomRepositoryTests extends AbstractIntegrationTest {
             Mono<Tuple2<Chatroom, ChatroomUsersRelation>> resultMono = chatroomService.create(Chatroom.builder()
                             .id(UUID.randomUUID().toString())
                             .chatroomUserCreatorId(user.id())
-                            .build().getChatroomUserCreatorId(),
-                            "Test")
+                            .chatroomName("Test")
+                            .build())
 
                 .flatMap(chatroom -> {
                     System.out.println(chatroom.getId());
@@ -98,8 +98,8 @@ public class ChatroomRepositoryTests extends AbstractIntegrationTest {
                 Chatroom.builder()
                         .id(UUID.randomUUID().toString())
                         .chatroomUserCreatorId(creator.id())
-                        .build().getChatroomUserCreatorId(),
-                "Test2");
+                        .chatroomName("Test2")
+                        .build());
 
         // We use Mono.zip when we want to do something with both results, in this case, just to hold the chatroomId.
         Mono<Tuple2<Chatroom, ChatroomUsersRelation>> resultMono = chatroomMono.flatMap(createdChatroom ->
@@ -126,10 +126,10 @@ public class ChatroomRepositoryTests extends AbstractIntegrationTest {
         // Create a new chatroom for this specific test to avoid ID conflicts
         Chatroom chatroom = chatroomService.create(Chatroom.builder()
                         .id(UUID.randomUUID().toString())
-                .chatroomUserCreatorId(users.get(0).id())
-                .build().getChatroomUserCreatorId(),
-                        "Test3")
-                .block();
+                        .chatroomUserCreatorId(users.get(0).id())
+                        .chatroomName("Test3")
+                        .build())
+                        .block();
         assertNotNull(chatroom); // Ensure the chatroom was created
 
         // Here we assume chatroom IDs are generated correctly by the service/database
