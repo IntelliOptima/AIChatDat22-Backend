@@ -8,6 +8,10 @@ server:
 spring:
   application:
     name: aichatdat-backend
+  
+  main:
+    web-application-type: reactive
+    
   rsocket:
     server:
       transport: websocket
@@ -31,6 +35,25 @@ spring:
     url: jdbc:mysql://aichatproject.mysql.database.azure.com/test_chataidb?
     user: ${spring.r2dbc.username}
     password: ${spring.r2dbc.password}
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            authorization-grant-type: authorization_code
+            provider: google
+            scope:
+              - email
+              - profile
+              - openid
+
+      resourceserver:
+        jwt:
+          issuer-uri: https://accounts.google.com
+          jwk-set-uri: https://www.googleapis.com/oauth2/v3/certs
 
 
 logging:

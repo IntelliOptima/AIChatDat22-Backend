@@ -6,13 +6,10 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.example.aichatprojectdat.OpenAIModels.dall_e.model.generation.ImageGenerationRequest;
-import com.example.aichatprojectdat.OpenAIModels.dall_e.service.IDALL_E3ServiceStandard;
-import com.example.aichatprojectdat.OpenAIModels.dall_e.spring.service.interfaces.IDALL_EService;
-import com.example.aichatprojectdat.OpenAIModels.gpt.service.GPT3ServiceImpl;
-import com.example.aichatprojectdat.OpenAIModels.gpt.service.GPT4ServiceImpl;
-import com.example.aichatprojectdat.OpenAIModels.gpt.service.interfaces.IGPT3Service;
-import com.example.aichatprojectdat.OpenAIModels.gpt.service.interfaces.IGPT4Service;
+import com.example.aichatprojectdat.open_ai_models.dall_e.model.generation.ImageGenerationRequest;
+import com.example.aichatprojectdat.open_ai_models.dall_e.service.IDALL_E3ServiceStandard;
+import com.example.aichatprojectdat.open_ai_models.gpt.service.interfaces.IGPT3Service;
+import com.example.aichatprojectdat.open_ai_models.gpt.service.interfaces.IGPT4Service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
