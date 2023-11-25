@@ -42,10 +42,10 @@ public record User (
 
 
     public static User chatGPTUser() {
-        return new User(1L, "chatgpt@chatgpt.com", "CHATGPT", "https://th.bing.com/th/id/OIF.pu6JgOrk5eTBtCEFGtCR7Q?pid=ImgDet&rs=1", null, null, null);
+        return new User(1L, "chatgpt@chatgpt.com", "ChatGPT", "https://th.bing.com/th/id/OIF.pu6JgOrk5eTBtCEFGtCR7Q?pid=ImgDet&rs=1", null, null, null);
     }
 
     public static User DallE() {
-        return new User(2L, "dalle@chatgpt.com", "DALL-E", "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.magnolia-cms.com%2Fmarketplace%2Fdetail%2Fdall-e.html&psig=AOvVaw2g7wAwzEuIi7zeJ7Q7glAO&ust=1700613408374000&source=images&cd=vfe&ved=0CBEQjRxqFwoTCOiFveLs04IDFQAAAAAdAAAAABAE", null, null, null);
+        return new User(2L, "dalle@chatgpt.com", "Dall-E", "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.magnolia-cms.com%2Fmarketplace%2Fdetail%2Fdall-e.html&psig=AOvVaw2g7wAwzEuIi7zeJ7Q7glAO&ust=1700613408374000&source=images&cd=vfe&ved=0CBEQjRxqFwoTCOiFveLs04IDFQAAAAAdAAAAABAE", null, null, null);
     }
 }

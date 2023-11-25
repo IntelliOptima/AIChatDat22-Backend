@@ -1,7 +1,6 @@
 package com.example.aichatprojectdat.OpenAIModels.dall_e.spring.service.interfaces;
 
 
-import com.example.aichatprojectdat.OpenAIModels.custom_interface.DALLE_Exchange;
 import com.example.aichatprojectdat.OpenAIModels.dall_e.model.generation.ImageGenerationRequest;
 import com.example.aichatprojectdat.OpenAIModels.dall_e.model.generation.ImageGenerationResponse;
 

@@ -1,11 +1,10 @@
 package com.example.aichatprojectdat.OpenAIModels.dall_e.spring.service;
 
 import com.example.aichatprojectdat.OpenAIModels.custom_interface.CustomOpenAI_DALL_E_API;
-import com.example.aichatprojectdat.OpenAIModels.custom_interface.DALLE_Exchange;
 import com.example.aichatprojectdat.OpenAIModels.dall_e.model.generation.ImageGenerationRequest;
 import com.example.aichatprojectdat.OpenAIModels.dall_e.model.generation.ImageGenerationResponse;
 import com.example.aichatprojectdat.OpenAIModels.dall_e.spring.service.interfaces.IDALL_EService;
-import lombok.AllArgsConstructor;
+
 
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
