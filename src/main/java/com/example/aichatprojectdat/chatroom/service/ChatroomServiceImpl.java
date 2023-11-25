@@ -43,7 +43,11 @@ public class ChatroomServiceImpl implements IChatroomService {
                     Mono<ChatroomUsersRelation> GPTRelation = chatroomUsersRelationRepository.save(
                             ChatroomUsersRelation.of(chatroom.getId(), 1L));
 
-                    return Mono.when(chatroomRelation, GPTRelation)
+                    Mono<ChatroomUsersRelation> DallERelation = chatroomUsersRelationRepository.save(
+                            ChatroomUsersRelation.of(chatroom.getId(), 2L)
+                    );
+
+                    return Mono.when(chatroomRelation, GPTRelation, DallERelation)
                             .then(Mono.just(chatroom));
                         }
                 );
