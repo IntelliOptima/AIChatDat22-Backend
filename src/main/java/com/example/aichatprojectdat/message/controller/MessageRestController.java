@@ -1,5 +1,7 @@
 package com.example.aichatprojectdat.message.controller;
 
+import com.example.aichatprojectdat.message.model.ReadReceipt;
+import com.example.aichatprojectdat.message.service.IReadReceiptService;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.ServerSentEvent;
@@ -19,7 +21,7 @@ import reactor.core.publisher.Mono;
 @CrossOrigin
 public class MessageRestController {
 
-private final IMessageService messageService;
+    private final IMessageService messageService;
 
     @GetMapping(produces = MediaType.APPLICATION_NDJSON_VALUE)
     public Flux<Message> getMessages() {
@@ -31,5 +33,7 @@ private final IMessageService messageService;
     public Mono<ResponseEntity<Flux<Message>>> getMessagesByChatroomId(@PathVariable String chatroomId) {
         return Mono.just(ResponseEntity.ok().body(messageService.getMessagesByChatroomId(chatroomId)));
     }
+
+
 
 }

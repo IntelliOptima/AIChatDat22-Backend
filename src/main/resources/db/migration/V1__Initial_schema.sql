@@ -56,4 +56,14 @@ CREATE TABLE message (
         REFERENCES chatroom (id)
 );
 
+CREATE TABLE read_receipt (
+  message_id       VARCHAR(36) NOT NULL,
+  user_id          BIGINT NOT NULL,
+  has_read         BOOLEAN NOT NULL,
+
+  PRIMARY KEY (message_id, user_id),
+  FOREIGN KEY (message_id) REFERENCES message (id),
+  FOREIGN KEY (user_id) REFERENCES user (id)
+);
+
 

@@ -5,16 +5,19 @@ import com.example.aichatprojectdat.chatroom.model.Chatroom;
 import com.example.aichatprojectdat.chatroom.model.ChatroomUsersRelation;
 import com.example.aichatprojectdat.chatroom.repository.ChatroomRepository;
 import com.example.aichatprojectdat.chatroom.repository.ChatroomUsersRelationRepository;
+import com.example.aichatprojectdat.message.model.Message;
+import com.example.aichatprojectdat.message.model.ReadReceipt;
+import com.example.aichatprojectdat.message.repository.ReadReceiptRepository;
 import com.example.aichatprojectdat.message.repository.MessageRepository;
 import com.example.aichatprojectdat.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.Collections;
 import java.util.UUID;
 
 @Service
@@ -26,6 +29,7 @@ public class ChatroomServiceImpl implements IChatroomService {
     private final ChatroomUsersRelationRepository chatroomUsersRelationRepository;
     private final UserRepository userRepository;
     private final MessageRepository messageRepository;
+    private final ReadReceiptRepository readReceiptRepository;
 
 
     @Transactional
@@ -79,6 +83,21 @@ public class ChatroomServiceImpl implements IChatroomService {
                             .doOnNext(c -> System.out.println("Chatroom with users set: " + c))
                             // Proceed with fetching messages only after users have been set
                             .then(messageRepository.findAllByChatroomIdOrderByCreatedDateAsc(chatroom.getId())
+                                    .flatMap(message ->
+                                            readReceiptRepository.findAllByMessageId(message.id())
+                                                    .collectMap(ReadReceipt::userId, ReadReceipt::hasRead)
+                                                    .map(readReceipts ->
+                                                            Message.readReceiptUpdate(
+                                                                    message.id(),
+                                                                    message.userId(),
+                                                                    message.textMessage(),
+                                                                    message.chatroomId(),
+                                                                    readReceipts,
+                                                                    message.createdDate(),
+                                                                    message.lastModifiedDate(),
+                                                                    message.version())
+                                                    )
+                                    )
                                     .collectList()
                                     .doOnNext(messages -> {
                                         System.out.println("Messages collected for chatroom: " + messages);

@@ -10,17 +10,13 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.example.aichatprojectdat.OpenAIModels.dall_e.model.generation.ImageGenerationRequest;
 import com.example.aichatprojectdat.OpenAIModels.dall_e.service.IDALL_E3ServiceStandard;
-import com.example.aichatprojectdat.OpenAIModels.dall_e.spring.service.interfaces.IDALL_EService;
-import com.example.aichatprojectdat.OpenAIModels.gpt.service.GPT3ServiceImpl;
-import com.example.aichatprojectdat.OpenAIModels.gpt.service.GPT4ServiceImpl;
 import com.example.aichatprojectdat.OpenAIModels.gpt.service.interfaces.IGPT3Service;
 import com.example.aichatprojectdat.OpenAIModels.gpt.service.interfaces.IGPT4Service;
-import com.example.aichatprojectdat.user.model.User;
+import com.example.aichatprojectdat.message.model.ReadReceipt;
+import com.example.aichatprojectdat.message.service.IReadReceiptService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
-
-import org.springframework.stereotype.Controller;
 
 import com.example.aichatprojectdat.message.model.Message;
 import com.example.aichatprojectdat.message.service.IMessageService;
@@ -38,9 +34,10 @@ import reactor.core.scheduler.Schedulers;
 @RestController
 @RequiredArgsConstructor
 @CrossOrigin
-public class ChatroomController {
+public class ChatroomRSocketController {
 
     private final IMessageService messageService;
+    private final IReadReceiptService readReceiptService;
     private final IGPT3Service gpt3Service;
     private final IGPT4Service gpt4Service;
     private final IDALL_E3ServiceStandard iDallE3ServiceStandard;
@@ -116,10 +113,27 @@ public class ChatroomController {
 
     public void emitReceivedMessage(Message chatMessage, Sinks.Many<Message> sink) {
         Message receivedMessage = Message.of(chatMessage.userId(), chatMessage.textMessage(), chatMessage.chatroomId());
-        messageService.create(receivedMessage).subscribe();
+        ReadReceipt newMessageReceipt = ReadReceipt.of(chatMessage.id(), chatMessage.userId(), true);
+        messageService.create(receivedMessage)
+                .flatMap(message -> readReceiptService.create(newMessageReceipt))
+                .subscribe(result -> {
+                    log.info("Read receipt created for message {}", result);
+                }, error -> {
+                    log.error("Error creating read receipt", error);
+                });
 
         log.info("Emitting message {}", chatMessage);
-        sink.emitNext(chatMessage, Sinks.EmitFailureHandler.FAIL_FAST);
+        Message messageWithReceipt = Message.readReceiptUpdate(
+                chatMessage.id(),
+                chatMessage.userId(),
+                chatMessage.textMessage(),
+                chatMessage.chatroomId(),
+                Map.of(newMessageReceipt.userId(), newMessageReceipt.hasRead()),
+                chatMessage.createdDate(),
+                chatMessage.lastModifiedDate(),
+                chatMessage.version());
+
+        sink.emitNext(messageWithReceipt, Sinks.EmitFailureHandler.FAIL_FAST);
     }
 
     public void handleGptMessage(Message chatMessage, Sinks.Many<Message> sink) {
