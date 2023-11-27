@@ -12,13 +12,13 @@ import com.example.aichatprojectdat.OpenAIModels.dall_e.model.generation.ImageGe
 import com.example.aichatprojectdat.OpenAIModels.dall_e.service.IDALL_E3ServiceStandard;
 import com.example.aichatprojectdat.OpenAIModels.gpt.service.interfaces.IGPT3Service;
 import com.example.aichatprojectdat.OpenAIModels.gpt.service.interfaces.IGPT4Service;
+import com.example.aichatprojectdat.message.model.Message;
 import com.example.aichatprojectdat.message.model.ReadReceipt;
 import com.example.aichatprojectdat.message.service.IReadReceiptService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 
-import com.example.aichatprojectdat.message.model.Message;
 import com.example.aichatprojectdat.message.service.IMessageService;
 
 import lombok.RequiredArgsConstructor;
@@ -80,7 +80,11 @@ public class ChatroomRSocketController {
                 })
                 .thenMany(Flux.defer(() ->
                         Flux.fromIterable(onlineUsers.get(chatroomId))
-                                .map(userId -> Message.of(userId, "User: " + userId + " has just connected", chatroomId))
+                                .map(userId -> Message.builder()
+                                                .userId(userId)
+                                                .textMessage("User: " + userId + " has just connected")
+                                                .chatroomId(chatroomId)
+                                                .build())
                 ));
     }
 
@@ -90,7 +94,7 @@ public class ChatroomRSocketController {
     // Method for clients to send messages to a chatroom
     @MessageMapping("chat.send.{chatroomId}")
     public void receiveMessage(@DestinationVariable String chatroomId, Message chatMessage) {
-        log.info("Received message: {}", chatMessage.textMessage());
+        log.info("Received message: {}", chatMessage.getTextMessage());
 
         Sinks.Many<Message> sink = chatroomSinks.computeIfAbsent(chatroomId, id ->
                 Sinks.many()
@@ -100,41 +104,54 @@ public class ChatroomRSocketController {
         emitReceivedMessage(chatMessage, sink);
 
         // Check if the message is a GPT command
-        if (chatMessage.textMessage().toLowerCase().startsWith("@gpt")) {
+        if (chatMessage.getTextMessage().toLowerCase().startsWith("@gpt")) {
             log.info("Emitting GPT Response");
             handleGptMessage(chatMessage, sink);
         }
 
-        if (chatMessage.textMessage().toLowerCase().startsWith("@dalle")) {
+        if (chatMessage.getTextMessage().toLowerCase().startsWith("@dalle")) {
             log.info("Emitting DallE Response");
             handleDallEMessage(chatMessage, sink);
         }
     }
 
     public void emitReceivedMessage(Message chatMessage, Sinks.Many<Message> sink) {
-        Message receivedMessage = Message.of(chatMessage.userId(), chatMessage.textMessage(), chatMessage.chatroomId());
-        ReadReceipt newMessageReceipt = ReadReceipt.of(chatMessage.id(), chatMessage.userId(), true);
+
+        Message receivedMessage = Message.builder()
+                .id(chatMessage.getId())
+                .userId(chatMessage.getUserId())
+                .textMessage(chatMessage.getTextMessage())
+                .chatroomId(chatMessage.getChatroomId())
+                .build();
+
         messageService.create(receivedMessage)
-                .flatMap(message -> readReceiptService.create(newMessageReceipt))
-                .subscribe(result -> {
-                    log.info("Read receipt created for message {}", result);
+                .flatMap(savedMessage -> {
+                    ReadReceipt newMessageReceipt = ReadReceipt.of(savedMessage.getId(), savedMessage.getUserId(), true);
+                    return readReceiptService.createReadReceipt(newMessageReceipt)
+                            .thenReturn(savedMessage); // Chain read receipt creation in the reactive flow
+                })
+                .subscribe(savedMessage -> {
+                    log.info("Read receipt created for message {}", savedMessage);
+
+                    Message messageWithReceipt = Message.builder()
+                            .id(savedMessage.getId())
+                            .userId(savedMessage.getUserId())
+                            .textMessage(savedMessage.getTextMessage())
+                            .chatroomId(savedMessage.getChatroomId())
+                            .readReceipt(Map.of(savedMessage.getUserId(), true))
+                            .createdDate(savedMessage.getCreatedDate())
+                            .lastModifiedDate(savedMessage.getLastModifiedDate())
+                            .version(savedMessage.getVersion())
+                            .build();
+
+                    sink.emitNext(messageWithReceipt, Sinks.EmitFailureHandler.FAIL_FAST);
                 }, error -> {
                     log.error("Error creating read receipt", error);
                 });
 
         log.info("Emitting message {}", chatMessage);
-        Message messageWithReceipt = Message.readReceiptUpdate(
-                chatMessage.id(),
-                chatMessage.userId(),
-                chatMessage.textMessage(),
-                chatMessage.chatroomId(),
-                Map.of(newMessageReceipt.userId(), newMessageReceipt.hasRead()),
-                chatMessage.createdDate(),
-                chatMessage.lastModifiedDate(),
-                chatMessage.version());
-
-        sink.emitNext(messageWithReceipt, Sinks.EmitFailureHandler.FAIL_FAST);
     }
+
 
     public void handleGptMessage(Message chatMessage, Sinks.Many<Message> sink) {
         StringBuilder gptAnswer = new StringBuilder();
@@ -142,16 +159,37 @@ public class ChatroomRSocketController {
         String gptMessageId = UUID.randomUUID().toString();
         Instant createdDate = Instant.now();
         
-        gpt4Service.streamChat(chatMessage.textMessage().split("@gpt")[1])
+        gpt4Service.streamChat(chatMessage.getTextMessage().split("@gpt")[1])
                 .doOnNext(chunk -> {
                     String updatedContent = gptAnswer.append(chunk).toString();
-                    sink.emitNext(Message.ofGPTStream(gptMessageId,1L, updatedContent, chatMessage.chatroomId(), createdDate), Sinks.EmitFailureHandler.FAIL_FAST);
+                    sink.emitNext(Message.builder()
+                                    .id(gptMessageId)
+                                    .userId(1L)
+                                    .textMessage(updatedContent)
+                                    .chatroomId(chatMessage.getChatroomId())
+                                    .createdDate(createdDate)
+                                    .build(), Sinks.EmitFailureHandler.FAIL_FAST);
                 })
                 .doOnError(e -> log.error("Error in GPT streaming: {}", e.getMessage()))
                 .publishOn(Schedulers.boundedElastic())
                 .doFinally(signalType -> {
-                    sink.emitNext(Message.ofGPTStream(gptMessageId,1L, "Gpt Finished message", chatMessage.chatroomId(), createdDate), Sinks.EmitFailureHandler.FAIL_FAST);
-                    Message gptCompleteMessage = Message.ofGPTStream(gptMessageId,1L, gptAnswer.toString(), chatMessage.chatroomId(), createdDate);
+                    sink.emitNext(Message.builder()
+                                    .id(gptMessageId)
+                                    .userId(1L)
+                                    .textMessage("Gpt Finished message")
+                                    .chatroomId(chatMessage.getChatroomId())
+                                    .createdDate(createdDate)
+                                    .build(), Sinks.EmitFailureHandler.FAIL_FAST);
+
+
+                    Message gptCompleteMessage = Message.builder()
+                            .id(gptMessageId)
+                            .userId(1L)
+                            .textMessage(gptAnswer.toString())
+                            .chatroomId(chatMessage.getChatroomId())
+                            .createdDate(createdDate)
+                            .build();
+
                     messageService.create(gptCompleteMessage).subscribe();
                     gptAnswer.setLength(0);
                 }).subscribe();
@@ -159,11 +197,16 @@ public class ChatroomRSocketController {
 
 
     public void handleDallEMessage(Message chatMessage, Sinks.Many<Message> sink) {
-        iDallE3ServiceStandard.generateImage(chatMessage.textMessage())
-                .doFirst(() -> System.out.println(ImageGenerationRequest.of(chatMessage.textMessage()).toString()))
+        iDallE3ServiceStandard.generateImage(chatMessage.getTextMessage())
+                .doFirst(() -> System.out.println(ImageGenerationRequest.of(chatMessage.getTextMessage()).toString()))
                 .publishOn(Schedulers.boundedElastic())
                 .doOnNext(response -> {
-                    Message dalleMessage = Message.of(2L, response.getImageList().get(0).getUrl(), chatMessage.chatroomId());
+                    Message dalleMessage = Message.builder()
+                            .userId(2L)
+                            .textMessage(response.getImageList().get(0).getUrl())
+                            .chatroomId(chatMessage.getChatroomId())
+                            .build();
+
                     sink.emitNext(dalleMessage,Sinks.EmitFailureHandler.FAIL_FAST);
                     messageService.create(dalleMessage).subscribe();
                 }).subscribe();

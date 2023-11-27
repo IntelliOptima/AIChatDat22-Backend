@@ -4,10 +4,12 @@ import com.example.aichatprojectdat.message.model.ReadReceipt;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.Map;
+
 
 public interface IReadReceiptService {
 
-    Mono<ReadReceipt> create(ReadReceipt readReceipt);
+    Mono<ReadReceipt> createReadReceipt(ReadReceipt readReceipt);
 
-    Flux<ReadReceipt> findAllByMessageId(String messageId);
+    Mono<Map<Long, Boolean>> findReadReceiptsByMessageId(String messageId);
 }

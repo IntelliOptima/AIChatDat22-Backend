@@ -1,52 +1,43 @@
 package com.example.aichatprojectdat.message.model;
 
 
-import java.time.Instant;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.*;
 import org.springframework.data.relational.core.mapping.Table;
 
+import java.time.Instant;
+import java.util.Map;
+import java.util.UUID;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Table(name = "message")
-public record Message(
-        @Id
-        String id,
+public class Message {
 
-        Long userId,
+    @Id
+    @Builder.Default
+    String id = UUID.randomUUID().toString();
 
-        String textMessage,
+    Long userId;
 
-        String chatroomId,
+    String textMessage;
 
-        @Transient
-        Map<Long, Boolean> readReceipt,
+    String chatroomId;
 
-        @CreatedDate
-        Instant createdDate,
+    @Transient
+    Map<Long, Boolean> readReceipt;
 
-        @LastModifiedDate
-        Instant lastModifiedDate,
+    @CreatedDate
+    Instant createdDate;
 
-        @Version
-        Long version
-) {
-        public static Message of(Long userId, String textMessage, String chatroomId){
-                return new Message(UUID.randomUUID().toString(), userId, textMessage, chatroomId, null, null, null, null);
-        }
+    @LastModifiedDate
+    Instant lastModifiedDate;
 
-        public static Message readReceiptUpdate(String id, Long userId, String textMessage, String chatroomId, Map<Long, Boolean> readReceipt, Instant createdDate, Instant lastModifiedDate, Long version) {
-                return new Message(id, userId, textMessage, chatroomId, readReceipt, createdDate, lastModifiedDate, version);
-        }
-
-        public static Message ofGPTStream(String messageId, Long userId, String textMessage, String chatroomId, Instant createdDate ) {
-                        return new Message(messageId, userId, textMessage, chatroomId, Collections.emptyMap(), createdDate, null, null);
-        }
-
-        public static Message emptyButWithIdForTest(String uuid, Long userId, String textMessage, String chatroomId) {
-                return new Message(uuid, userId, textMessage, chatroomId, null,null, null, null);
-        }
+    @Version
+    Long version;
 }

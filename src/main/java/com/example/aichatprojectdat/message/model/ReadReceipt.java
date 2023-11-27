@@ -3,13 +3,10 @@ package com.example.aichatprojectdat.message.model;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 
-@Table
+@Table(name = "read_receipt")
 public record ReadReceipt (
-        @Id
         String messageId,
-
         Long userId,
-
         Boolean hasRead
 ) {
     public static ReadReceipt of(String messageId, Long userId, Boolean hasRead) {

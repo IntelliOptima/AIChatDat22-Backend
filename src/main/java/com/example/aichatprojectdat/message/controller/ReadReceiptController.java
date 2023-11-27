@@ -16,8 +16,9 @@ public class ReadReceiptController {
     private final IReadReceiptService readReceiptService;
 
 
-    @PutMapping
+    @PostMapping
     public Mono<ResponseEntity<Mono<ReadReceipt>>> updateReadReceiptForMessage(@RequestBody ReadReceipt receipt) {
-        return Mono.just(ResponseEntity.ok().body(readReceiptService.create(receipt)));
+        System.out.println(receipt);
+        return Mono.just(ResponseEntity.ok().body(readReceiptService.createReadReceipt(receipt)));
     }
 }

@@ -7,8 +7,8 @@ import com.example.aichatprojectdat.chatroom.repository.ChatroomRepository;
 import com.example.aichatprojectdat.chatroom.repository.ChatroomUsersRelationRepository;
 import com.example.aichatprojectdat.message.model.Message;
 import com.example.aichatprojectdat.message.model.ReadReceipt;
-import com.example.aichatprojectdat.message.repository.ReadReceiptRepository;
 import com.example.aichatprojectdat.message.repository.MessageRepository;
+import com.example.aichatprojectdat.message.service.ReadReceiptServiceImpl;
 import com.example.aichatprojectdat.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
@@ -17,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.util.Collections;
 import java.util.UUID;
 
 @Service
@@ -29,7 +28,7 @@ public class ChatroomServiceImpl implements IChatroomService {
     private final ChatroomUsersRelationRepository chatroomUsersRelationRepository;
     private final UserRepository userRepository;
     private final MessageRepository messageRepository;
-    private final ReadReceiptRepository readReceiptRepository;
+    private final ReadReceiptServiceImpl readReceiptService;
 
 
     @Transactional
@@ -84,18 +83,18 @@ public class ChatroomServiceImpl implements IChatroomService {
                             // Proceed with fetching messages only after users have been set
                             .then(messageRepository.findAllByChatroomIdOrderByCreatedDateAsc(chatroom.getId())
                                     .flatMap(message ->
-                                            readReceiptRepository.findAllByMessageId(message.id())
-                                                    .collectMap(ReadReceipt::userId, ReadReceipt::hasRead)
+                                            readReceiptService.findReadReceiptsByMessageId(message.getId())
                                                     .map(readReceipts ->
-                                                            Message.readReceiptUpdate(
-                                                                    message.id(),
-                                                                    message.userId(),
-                                                                    message.textMessage(),
-                                                                    message.chatroomId(),
-                                                                    readReceipts,
-                                                                    message.createdDate(),
-                                                                    message.lastModifiedDate(),
-                                                                    message.version())
+                                                            Message.builder()
+                                                                    .id(message.getId())
+                                                                    .userId(message.getUserId())
+                                                                    .textMessage(message.getTextMessage())
+                                                                    .chatroomId(message.getChatroomId())
+                                                                    .readReceipt(readReceipts)
+                                                                    .createdDate(message.getCreatedDate())
+                                                                    .lastModifiedDate(message.getLastModifiedDate())
+                                                                    .version(message.getVersion())
+                                                                    .build()
                                                     )
                                     )
                                     .collectList()
