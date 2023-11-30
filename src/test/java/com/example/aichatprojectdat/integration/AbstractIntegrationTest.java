@@ -12,8 +12,7 @@ import org.testcontainers.utility.DockerImageName;
 @Testcontainers // Indicates that Testcontainers should be used
 public abstract class AbstractIntegrationTest {
 
-    // Define your MySQL container (it will be shared between test classes)
-    //@Container
+    @Container
     private static final MySQLContainer<?> mySQLContainer = new MySQLContainer<>(DockerImageName.parse("mysql:latest"));
 
     @DynamicPropertySource
