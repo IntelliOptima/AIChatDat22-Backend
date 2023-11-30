@@ -1,7 +1,7 @@
 CREATE TABLE user
 (
     id                          BIGINT AUTO_INCREMENT PRIMARY KEY,
-    email                       VARCHAR(100) NOT NULL,
+    email                       VARCHAR(100) UNIQUE   NOT NULL,
     full_name                   VARCHAR(100) NOT NULL,
     profile_image               TEXT,
     created_date                TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
@@ -13,6 +13,7 @@ CREATE TABLE chatroom (
   id                            VARCHAR(36) NOT NULL PRIMARY KEY,
   chatroom_user_creator_id      BIGINT,
   chatroom_name                 TEXT,
+  color                         VARCHAR(255),
   created_date                  TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
   last_modified_date            TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
   version                       INT,
