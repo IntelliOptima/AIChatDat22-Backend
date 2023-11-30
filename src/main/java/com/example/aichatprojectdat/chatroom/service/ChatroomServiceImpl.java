@@ -11,6 +11,7 @@ import com.example.aichatprojectdat.message.repository.MessageRepository;
 import com.example.aichatprojectdat.message.service.ReadReceiptServiceImpl;
 import com.example.aichatprojectdat.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Primary
+@Slf4j
 public class ChatroomServiceImpl implements IChatroomService {
 
     private final ChatroomRepository chatroomRepository;
@@ -68,18 +70,18 @@ public class ChatroomServiceImpl implements IChatroomService {
                     // Fetch and set the users
                     return chatroomUsersRelationRepository.findAllByChatroomId(chatroom.getId())
                             .flatMap(relation -> {
-                                System.out.println("Relation found for chatroom-user: " + relation);
+                                log.info("Relation found for chatroom-user: " + relation);
                                 return userRepository.findById(relation.userId())
-                                        .doOnSuccess(user -> System.out.println("User found: " + user))
-                                        .doOnError(error -> System.out.println("Error fetching user: " + error.getMessage()));
+                                        .doOnSuccess(user -> log.info("User found: " + user))
+                                        .doOnError(error -> log.info("Error fetching user: " + error.getMessage()));
                             })
                             .collectList()
                             .doOnNext(users -> {
-                                System.out.println("Users collected for chatroom: " + users);
+                                log.info("Users collected for chatroom: " + users);
                                 chatroom.setUsers(users);
                             })
                             .then(Mono.just(chatroom))
-                            .doOnNext(c -> System.out.println("Chatroom with users set: " + c))
+                            .doOnNext(c -> log.info("Chatroom with users set: " + c))
                             // Proceed with fetching messages only after users have been set
                             .then(messageRepository.findAllByChatroomIdOrderByCreatedDateAsc(chatroom.getId())
                                     .flatMap(message ->
@@ -99,13 +101,13 @@ public class ChatroomServiceImpl implements IChatroomService {
                                     )
                                     .collectList()
                                     .doOnNext(messages -> {
-                                        System.out.println("Messages collected for chatroom: " + messages);
+                                        log.info("Messages collected for chatroom: " + messages);
                                         chatroom.setMessages(messages);
                                     }))
                             .thenReturn(chatroom);
                 })
-                .doOnSuccess(chatroom -> System.out.println("Final chatroom: " + chatroom))
-                .doOnError(error -> System.out.println("Error in findById: " + error.getMessage()));
+                .doOnSuccess(chatroom -> log.info("Final chatroom: " + chatroom))
+                .doOnError(error -> log.info("Error in findById: " + error.getMessage()));
     }
 
 

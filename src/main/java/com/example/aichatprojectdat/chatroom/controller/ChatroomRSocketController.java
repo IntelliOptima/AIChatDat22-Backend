@@ -59,7 +59,7 @@ public class ChatroomRSocketController {
             @DestinationVariable String chatroomId,
             Mono<String> requestMessage
     ) {
-        return requestMessage.doOnNext(s -> System.out.println("Received message text: " + s))
+        return requestMessage.doOnNext(s -> log.info("Received message text: " + s))
                 .thenMany(chatroomSinks.computeIfAbsent(chatroomId, id ->
                                 Sinks.many()
                                         .replay()
@@ -159,7 +159,7 @@ public class ChatroomRSocketController {
         String gptMessageId = UUID.randomUUID().toString();
         Instant createdDate = Instant.now();
         
-        gpt4Service.streamChat(chatMessage.getTextMessage().split("@gpt")[1])
+        gpt4Service.streamChat(chatMessage.getTextMessage().split("@gpt ")[1])
                 .doOnNext(chunk -> {
                     String updatedContent = gptAnswer.append(chunk).toString();
                     sink.emitNext(Message.builder()
@@ -197,14 +197,18 @@ public class ChatroomRSocketController {
 
 
     public void handleDallEMessage(Message chatMessage, Sinks.Many<Message> sink) {
-        iDallE3ServiceStandard.generateImage(chatMessage.getTextMessage())
+        iDallE3ServiceStandard.generateImage(chatMessage.getTextMessage().split("@dalle ")[1])
                 .doFirst(() -> System.out.println(ImageGenerationRequest.of(chatMessage.getTextMessage()).toString()))
                 .publishOn(Schedulers.boundedElastic())
                 .doOnNext(response -> {
+                    Instant createdTime = Instant.now();
                     Message dalleMessage = Message.builder()
                             .userId(2L)
                             .textMessage(response.getImageList().get(0).getUrl())
                             .chatroomId(chatMessage.getChatroomId())
+                            .createdDate(createdTime)
+                            .lastModifiedDate(createdTime)
+                            .version(0L)
                             .build();
 
                     sink.emitNext(dalleMessage,Sinks.EmitFailureHandler.FAIL_FAST);

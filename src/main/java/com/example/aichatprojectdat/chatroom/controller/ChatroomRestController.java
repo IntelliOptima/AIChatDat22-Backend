@@ -26,8 +26,9 @@ public class ChatroomRestController {
         return chatroomService.create(newChatroom);
     }
 
-    @PostMapping("addUser/{chatroomId}")
+    @PostMapping("/addUser/{chatroomId}")
     Mono<ChatroomUsersRelation> addUserToChatroom(@PathVariable String chatroomId, @RequestBody String userEmailToAdd) {
+        log.info("Adding user" +  userEmailToAdd  + " to chatroomId: " + chatroomId);
         return chatRoomUsersRelationService.addUserToChatroom(chatroomId, userEmailToAdd);
     }
 

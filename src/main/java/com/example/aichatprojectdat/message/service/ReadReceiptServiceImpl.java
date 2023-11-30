@@ -27,8 +27,8 @@ public class ReadReceiptServiceImpl implements IReadReceiptService{
                 .bind("messageId", readReceipt.messageId())
                 .bind("userId", readReceipt.userId())
                 .bind("hasRead", readReceipt.hasRead())
-                .fetch().rowsUpdated() // This returns Mono<Integer>
-                .thenReturn(readReceipt); // Return the original ReadReceipt
+                .fetch().rowsUpdated()
+                .thenReturn(readReceipt);
     }
 
     public Mono<Map<Long, Boolean>> findReadReceiptsByMessageId(String messageId) {

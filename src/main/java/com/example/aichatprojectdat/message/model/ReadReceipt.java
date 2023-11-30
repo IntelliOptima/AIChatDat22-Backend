@@ -1,6 +1,5 @@
 package com.example.aichatprojectdat.message.model;
 
-import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 
 @Table(name = "read_receipt")
