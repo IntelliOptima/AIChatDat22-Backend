@@ -1,45 +1,43 @@
 package com.example.aichatprojectdat.message.model;
 
 
-import java.time.Instant;
-import java.util.UUID;
-
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.annotation.Version;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.*;
 import org.springframework.data.relational.core.mapping.Table;
 
+import java.time.Instant;
+import java.util.Map;
+import java.util.UUID;
 
-@Table
-public record Message(
-        @Id
-        String id,
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@Table(name = "message")
+public class Message {
 
-        Long userId,
+    @Id
+    @Builder.Default
+    String id = UUID.randomUUID().toString();
 
-        String textMessage,
+    Long userId;
 
-        String chatroomId,
+    String textMessage;
 
-        @CreatedDate
-        Instant createdDate,
+    String chatroomId;
 
-        @LastModifiedDate
-        Instant lastModifiedDate,
+    @Transient
+    Map<Long, Boolean> readReceipt;
 
-        @Version
-        Long version
-) {
-        public static Message of(Long userId, String textMessage, String chatroomId ){
-                return new Message(UUID.randomUUID().toString(), userId, textMessage, chatroomId, null, null, null);
-        }
+    @CreatedDate
+    Instant createdDate;
 
-        public static Message ofGPTStream(String messageId, Long userId, String textMessage, String chatroomId, Instant createdDate ) {
-                        return new Message(messageId, userId, textMessage, chatroomId, createdDate, null, null);
-        }
+    @LastModifiedDate
+    Instant lastModifiedDate;
 
-        public static Message emptyButWithIdForTest(String uuid, Long userId, String textMessage, String chatroomId) {
-                return new Message(uuid, userId, textMessage, chatroomId, null, null, null);
-        }
+    @Version
+    Long version;
 }

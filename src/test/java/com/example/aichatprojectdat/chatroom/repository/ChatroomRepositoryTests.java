@@ -24,6 +24,7 @@ import reactor.util.function.Tuples;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -52,6 +53,16 @@ public class ChatroomRepositoryTests extends AbstractIntegrationTest {
         users.add(userService.create(User.of("Oliver@hotmail.com", "Oliver", null)).block());
     }
 
+    public String getRandomColor() {
+        Random random = new Random();
+        String letters = "0123456789ABCDEF";
+        StringBuilder color = new StringBuilder("#");
+        for (int i = 0; i < 6; i++) {
+            color.append(letters.charAt(random.nextInt(16)));
+        }
+        return color.toString();
+    }
+
 
     @Test
     void whenChatroomCreated_ChatroomSavedInDB_AndUserRelationCreated_ReturnChatroomAndRelation() {
@@ -62,6 +73,7 @@ public class ChatroomRepositoryTests extends AbstractIntegrationTest {
                             .id(UUID.randomUUID().toString())
                             .chatroomUserCreatorId(user.id())
                             .chatroomName("Test")
+                            .color(getRandomColor())
                             .build())
 
                 .flatMap(chatroom -> {
@@ -99,6 +111,7 @@ public class ChatroomRepositoryTests extends AbstractIntegrationTest {
                         .id(UUID.randomUUID().toString())
                         .chatroomUserCreatorId(creator.id())
                         .chatroomName("Test2")
+                        .color(getRandomColor())
                         .build());
 
         // We use Mono.zip when we want to do something with both results, in this case, just to hold the chatroomId.
@@ -128,6 +141,7 @@ public class ChatroomRepositoryTests extends AbstractIntegrationTest {
                         .id(UUID.randomUUID().toString())
                         .chatroomUserCreatorId(users.get(0).id())
                         .chatroomName("Test3")
+                        .color(getRandomColor())
                         .build())
                         .block();
         assertNotNull(chatroom); // Ensure the chatroom was created

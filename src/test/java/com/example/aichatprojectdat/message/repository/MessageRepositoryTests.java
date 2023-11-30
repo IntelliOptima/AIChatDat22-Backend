@@ -58,9 +58,12 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
 
     void addMessagesToDbForTest() {
         IntStream.range(0, 10).forEach(i -> {
-            messageService.create(
-                    Message.emptyButWithIdForTest
-                            (UUIDS_FOR_MESSAGES[i], testUser.id(), "Test", testChatroom.getId())).block();
+            messageService.create(Message.builder()
+                            .id(UUIDS_FOR_MESSAGES[i])
+                            .userId(testUser.id())
+                            .textMessage("Test")
+                            .chatroomId(testChatroom.getId())
+                            .build()).block();
         });
     }
 
@@ -70,14 +73,18 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
         String mockMessage = "Test message";
         String chatroomId = testChatroom.getId();
 
-        Mono<Message> messageMono = messageService.create(Message.of(userId, mockMessage, chatroomId));
+        Mono<Message> messageMono = messageService.create(Message.builder()
+                        .userId(userId)
+                        .textMessage(mockMessage)
+                        .chatroomId(chatroomId)
+                        .build());
 
         StepVerifier.create(messageMono)
                 .consumeNextWith(message -> {
-                    assertFalse(message.id().isEmpty());
-                    assertEquals(message.textMessage(), mockMessage);
-                    assertEquals(message.userId(), userId);
-                    assertEquals(message.chatroomId(), chatroomId);
+                    assertFalse(message.getId().isEmpty());
+                    assertEquals(message.getTextMessage(), mockMessage);
+                    assertEquals(message.getUserId(), userId);
+                    assertEquals(message.getChatroomId(), chatroomId);
                 })
                 .verifyComplete();
     }
@@ -88,7 +95,11 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
         String mockMessage = "Test message";
         String chatroomId = testChatroom.getId();
 
-        Mono<Message> saveOperation = messageService.create(Message.of(userId, mockMessage, chatroomId));
+        Mono<Message> saveOperation = messageService.create(Message.builder()
+                        .userId(userId)
+                        .textMessage(mockMessage)
+                        .chatroomId(chatroomId)
+                        .build());
 
         // Ensure findAllByUserId is chained after the save operation completes
         Mono<List<Message>> messagesListMono = saveOperation
@@ -99,9 +110,9 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
                 .assertNext(messagesList -> {
                     assertFalse(messagesList.isEmpty(), "The messages list should not be empty");
                     messagesList.forEach(message -> {
-                        assertEquals(userId, message.userId(), "User ID should match");
-                        assertTrue(message.createdDate().isBefore(Instant.now()), "Created date should be in the past");
-                        assertFalse(message.chatroomId().isEmpty(), "Chatroom ID shold not be empty -  UUID");
+                        assertEquals(userId, message.getUserId(), "User ID should match");
+                        assertTrue(message.getCreatedDate().isBefore(Instant.now()), "Created date should be in the past");
+                        assertFalse(message.getChatroomId().isEmpty(), "Chatroom ID shold not be empty -  UUID");
                     });
                 })
                 .expectComplete()
@@ -119,7 +130,7 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
                 .assertNext(messages -> {
                     assertFalse(messages.isEmpty(), "The list should not be empty");
                     messages.forEach(message -> {
-                        assertEquals(message.chatroomId(), chatroomId);
+                        assertEquals(message.getChatroomId(), chatroomId);
                     });
                 })
                 .verifyComplete();
@@ -133,7 +144,7 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
 
         // First ensure the message is there
         StepVerifier.create(messageService.getMessageById(messageId))
-                .expectNextMatches(message -> message.id().equals(messageId))
+                .expectNextMatches(message -> message.getId().equals(messageId))
                 .verifyComplete();
 
         // Delete the message
@@ -142,12 +153,12 @@ public class MessageRepositoryTests extends AbstractIntegrationTest {
 
         // Fetch all messages for the user and ensure the deleted message is not among them
         Mono<List<Message>> messagesListMinusDeleted = messageService.getAllMessagesByUserId(userId)
-                .filter(message -> !message.id().equals(messageId)) // This ensures we don't get the deleted message
+                .filter(message -> !message.getId().equals(messageId)) // This ensures we don't get the deleted message
                 .collectList();
 
         StepVerifier.create(messagesListMinusDeleted)
                 .assertNext(messages -> assertFalse(messages.stream()
-                                .anyMatch(message -> message.id().equals(messageId)),
+                                .anyMatch(message -> message.getId().equals(messageId)),
                         "Deleted message should not be in the list"))
                 .verifyComplete();
     }

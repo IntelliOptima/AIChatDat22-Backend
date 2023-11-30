@@ -1,6 +1,5 @@
 package com.example.aichatprojectdat.user.model;
 
-import com.example.aichatprojectdat.message.model.Message;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.NonNull;
 import org.reactivestreams.Publisher;

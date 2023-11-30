@@ -6,14 +6,18 @@ import com.example.aichatprojectdat.chatroom.repository.ChatroomUsersRelationRep
 import com.example.aichatprojectdat.user.model.User;
 import com.example.aichatprojectdat.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.io.NotActiveException;
+
 @Service
 @RequiredArgsConstructor
 @Primary
+@Slf4j
 public class ChatroomUsersRelationServiceImpl implements IChatRoomUsersRelationService {
 
     private final ChatroomUsersRelationRepository chatroomUsersRelationRepository;
@@ -39,10 +43,11 @@ public class ChatroomUsersRelationServiceImpl implements IChatRoomUsersRelationS
         return userRepository.findUserByEmail(userEmailToAdd)
                 .map(User::id)
                 .flatMap(userId -> chatroomUsersRelationRepository.findByUserIdAndChatroomId(userId, chatroomId)
-                                .switchIfEmpty(chatroomUsersRelationRepository
-                                        .save(ChatroomUsersRelation.of(chatroomId, userId))))
+                        .switchIfEmpty(chatroomUsersRelationRepository
+                                .save(ChatroomUsersRelation.of(chatroomId, userId))))
                 .switchIfEmpty(Mono.error(new NotFoundException("User not found with email: " + userEmailToAdd)));
     }
+
 
     @Override
     public Mono<Void> delete(ChatroomUsersRelation chatroomUsersRelation) {
