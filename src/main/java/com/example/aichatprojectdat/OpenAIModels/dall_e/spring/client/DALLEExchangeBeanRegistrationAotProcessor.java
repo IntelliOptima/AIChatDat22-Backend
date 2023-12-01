@@ -36,7 +36,7 @@ public class DALLEExchangeBeanRegistrationAotProcessor implements BeanRegistrati
         // Find all interfaces for the bean class that are annotated with DALLE_Exchange
         Class<?>[] interfaces = ClassUtils.getAllInterfacesForClass(beanClass);
         if (log.isDebugEnabled()) {
-            log.debug("DALLE_Exchange interfaces: {}", interfaces);
+            log.debug("DALLE_Exchange interfaces: {}", (Object) interfaces);
         }
 
         for (Class<?> interfaceClass : interfaces) {

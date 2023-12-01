@@ -4,10 +4,8 @@ import com.example.aichatprojectdat.chatroom.model.Chatroom;
 import com.example.aichatprojectdat.chatroom.model.ChatroomUsersRelation;
 import com.example.aichatprojectdat.chatroom.service.IChatRoomUsersRelationService;
 import com.example.aichatprojectdat.chatroom.service.IChatroomService;
-import com.example.aichatprojectdat.message.model.Message;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
@@ -28,8 +26,9 @@ public class ChatroomRestController {
         return chatroomService.create(newChatroom);
     }
 
-    @PostMapping("addUser/{chatroomId}")
+    @PostMapping("/addUser/{chatroomId}")
     Mono<ChatroomUsersRelation> addUserToChatroom(@PathVariable String chatroomId, @RequestBody String userEmailToAdd) {
+        log.info("Adding user" +  userEmailToAdd  + " to chatroomId: " + chatroomId);
         return chatRoomUsersRelationService.addUserToChatroom(chatroomId, userEmailToAdd);
     }
 

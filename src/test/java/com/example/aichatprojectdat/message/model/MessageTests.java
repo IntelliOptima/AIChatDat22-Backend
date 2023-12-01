@@ -14,13 +14,17 @@ public class MessageTests {
         String mockMessage = "A beautiful weather";
         String chatroomId = UUID.randomUUID().toString();
 
-        Message message = Message.of(userId, mockMessage, chatroomId);
+        Message message = Message.builder()
+                .userId(userId)
+                .textMessage(mockMessage)
+                .chatroomId(chatroomId)
+                .build();
 
-        assertNotNull(message.id(), "Id should be handled by Database, and always be null on creation");
-        assertNull(message.createdDate(), "Id should be handled by Database, and always be null on creation");
-        assertEquals(message.userId(), userId);
-        assertEquals(message.textMessage(), mockMessage);
-        assertEquals(message.chatroomId(), chatroomId);
+        assertNotNull(message.getId(), "Id should be handled by Database, and always be null on creation");
+        assertNull(message.getCreatedDate(), "Id should be handled by Database, and always be null on creation");
+        assertEquals(message.getUserId(), userId);
+        assertEquals(message.getTextMessage(), mockMessage);
+        assertEquals(message.getChatroomId(), chatroomId);
     }
 
 

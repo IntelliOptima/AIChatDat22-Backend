@@ -1,13 +1,11 @@
 package com.example.aichatprojectdat.OpenAIModels.dall_e.service;
 
-import com.example.aichatprojectdat.OpenAIModels.custom_interface.DALLE_Exchange;
 import com.example.aichatprojectdat.OpenAIModels.dall_e.model.ImageRequestBuilder;
 import com.example.aichatprojectdat.OpenAIModels.dall_e.model.generation.ImageGenerationRequest;
 import com.example.aichatprojectdat.OpenAIModels.dall_e.model.generation.ImageGenerationResponse;
 import com.example.aichatprojectdat.OpenAIModels.dall_e.spring.client.DALLEExchangeMethodInterceptor;
-import com.example.aichatprojectdat.OpenAIModels.dall_e.spring.service.DALL_EServiceImpl;
 import com.example.aichatprojectdat.OpenAIModels.dall_e.spring.service.interfaces.IDALL_EService;
-import lombok.RequiredArgsConstructor;
+
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
