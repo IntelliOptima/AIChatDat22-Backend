@@ -8,13 +8,9 @@ import com.example.aichatprojectdat.integration.AbstractIntegrationTest;
 import com.example.aichatprojectdat.user.model.User;
 import com.example.aichatprojectdat.user.service.IUserService;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.data.r2dbc.DataR2dbcTest;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.annotation.DirtiesContext;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -47,10 +43,10 @@ public class ChatroomRepositoryTests extends AbstractIntegrationTest {
     @BeforeEach
     void createUserForChatroom() {
         users.clear();
-        users.add(userService.create(User.of("Alexander@hotmail.com", "Alexander Bø", null)).block());
-        users.add(userService.create(User.of("Alex@hotmail.com", "Holmberg", null)).block());
-        users.add(userService.create(User.of("Mikkel@hotmail.com", "Mikkel Fun", null)).block());
-        users.add(userService.create(User.of("Oliver@hotmail.com", "Oliver", null)).block());
+        users.add(userService.findOrCreate(User.of("Alexander@hotmail.com", "Alexander Bø", null)).block());
+        users.add(userService.findOrCreate(User.of("Alex@hotmail.com", "Holmberg", null)).block());
+        users.add(userService.findOrCreate(User.of("Mikkel@hotmail.com", "Mikkel Fun", null)).block());
+        users.add(userService.findOrCreate(User.of("Oliver@hotmail.com", "Oliver", null)).block());
     }
 
     public String getRandomColor() {

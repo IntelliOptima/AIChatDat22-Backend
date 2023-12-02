@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 import com.example.aichatprojectdat.OpenAIModels.dall_e.model.generation.ImageGenerationRequest;
 import com.example.aichatprojectdat.OpenAIModels.dall_e.service.IDALL_E3ServiceStandard;
@@ -60,12 +61,14 @@ public class ChatroomRSocketController {
             Mono<String> requestMessage
     ) {
         return requestMessage.doOnNext(s -> log.info("Received message text: " + s))
-                .thenMany(chatroomSinks.computeIfAbsent(chatroomId, id ->
-                                Sinks.many()
-                                        .replay()
-                                        .latest())
-                        .asFlux().onBackpressureBuffer());
+                .thenMany(chatroomSinks.computeIfAbsent(chatroomId, id -> Sinks.many().replay().latest()).asFlux().onBackpressureBuffer())
+                .doFinally(signal -> handleClientDisconnection(chatroomId));
 
+    }
+
+    private void handleClientDisconnection(String chatroomId) {
+
+        log.info("Client disconnected from chatroom: " + chatroomId);
     }
 
     @MessageMapping("chat.online.{chatroomId}")
@@ -159,7 +162,7 @@ public class ChatroomRSocketController {
         String gptMessageId = UUID.randomUUID().toString();
         Instant createdDate = Instant.now();
         
-        gpt4Service.streamChat(chatMessage.getTextMessage().split("@gpt ")[1])
+        gpt3Service.streamChat(chatMessage.getTextMessage().split("@gpt ")[1])
                 .doOnNext(chunk -> {
                     String updatedContent = gptAnswer.append(chunk).toString();
                     sink.emitNext(Message.builder()
@@ -197,6 +200,9 @@ public class ChatroomRSocketController {
 
 
     public void handleDallEMessage(Message chatMessage, Sinks.Many<Message> sink) {
+
+        AtomicReference<Message> dalleMessageRef = new AtomicReference<>(); // AtomicReference to hold the dalleMessage
+
         iDallE3ServiceStandard.generateImage(chatMessage.getTextMessage().split("@dalle ")[1])
                 .doFirst(() -> System.out.println(ImageGenerationRequest.of(chatMessage.getTextMessage()).toString()))
                 .publishOn(Schedulers.boundedElastic())
@@ -208,13 +214,20 @@ public class ChatroomRSocketController {
                             .chatroomId(chatMessage.getChatroomId())
                             .createdDate(createdTime)
                             .lastModifiedDate(createdTime)
-                            .version(0L)
                             .build();
 
-                    sink.emitNext(dalleMessage,Sinks.EmitFailureHandler.FAIL_FAST);
-                    messageService.create(dalleMessage).subscribe();
+                    dalleMessageRef.set(dalleMessage); // Set the dalleMessage in the AtomicReference
+
+                    sink.emitNext(dalleMessage, Sinks.EmitFailureHandler.FAIL_FAST);
+                })
+                .doFinally(signalType -> {
+                    Message messageToSave = dalleMessageRef.get(); // Retrieve the dalleMessage
+                    if (messageToSave != null) {
+                        messageService.create(messageToSave).subscribe(); // Save the message
+                    }
                 }).subscribe();
     }
+
 
 
 }
