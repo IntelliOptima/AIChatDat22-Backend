@@ -5,7 +5,7 @@ import org.mvnsearch.chatgpt.model.GPTExchange;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-@GPTExchange(model = "gpt-4-1106-preview", maxTokens = 1000)
+@GPTExchange
 public interface IGPT4Service extends IGPT_General {
 
     @Override

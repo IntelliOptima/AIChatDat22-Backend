@@ -23,6 +23,10 @@ public class GPT4ServiceImpl implements IGPT4Service {
 
     @Override
     public Flux<String> streamChat(String question) {
+        var chatCompletionRequest = ChatCompletionRequest.of(question);
+        chatCompletionRequest.setMaxTokens(1000);
+        chatCompletionRequest.setTemperature(1.0);
+        chatCompletionRequest.setModel("gpt-4-1106-preview");
         return chatGPTService.stream(ChatCompletionRequest.of(question))
                 .map(ChatCompletionResponse::getReplyText);
     }

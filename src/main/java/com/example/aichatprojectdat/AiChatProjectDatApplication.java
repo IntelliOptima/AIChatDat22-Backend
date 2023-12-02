@@ -5,13 +5,9 @@ import com.example.aichatprojectdat.user.service.IUserService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.data.r2dbc.config.EnableR2dbcAuditing;
-
-import java.util.Arrays;
 
 @SpringBootApplication
 @EnableR2dbcAuditing
@@ -25,8 +21,8 @@ public class AiChatProjectDatApplication {
     @Bean
     CommandLineRunner commandLineRun(IUserService userService) {
         return args -> {
-            userService.create(User.chatGPTUser()).block();
-            userService.create(User.DallE()).block();
+            userService.findOrCreate(User.chatGPTUser()).block();
+            userService.findOrCreate(User.DallE()).block();
         };
     }
 
