@@ -25,7 +25,11 @@ public class GPT3ServiceImpl implements IGPT3Service {
 
     @Override
     public Flux<String> streamChat(String question) {
-        return chatGPTService.stream(ChatCompletionRequest.of(question))
+        var chatCompletionRequest = ChatCompletionRequest.of(question);
+        chatCompletionRequest.setMaxTokens(1000);
+        chatCompletionRequest.setTemperature(1.0);
+        chatCompletionRequest.setModel("gpt-3.5-turbo-1106");
+        return chatGPTService.stream(chatCompletionRequest)
                 .map(ChatCompletionResponse::getReplyText);
     }
 }
