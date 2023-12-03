@@ -28,6 +28,9 @@ CREATE TABLE chatroom_users_relation (
     id                          BIGINT AUTO_INCREMENT PRIMARY KEY,
     chatroom_id                 VARCHAR(36) NOT NULL,
     user_id                     BIGINT,
+    created_date                TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
+    last_modified_date          TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
+    version                     INT,
 
     CONSTRAINT fk_ChatroomMessageRelation
         FOREIGN KEY (chatroom_id)
