@@ -2,10 +2,7 @@ package com.example.aichatprojectdat.chatroom.controller;
 
 
 import java.time.Instant;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -190,6 +187,49 @@ public class ChatroomRSocketController {
                             .userId(1L)
                             .textMessage(gptAnswer.toString())
                             .chatroomId(chatMessage.getChatroomId())
+                            .createdDate(createdDate)
+                            .build();
+
+                    messageService.create(gptCompleteMessage).subscribe();
+                    gptAnswer.setLength(0);
+                }).subscribe();
+    }
+
+
+    public void handleGptContextMessage(List<Message> messages, Sinks.Many<Message> sink) {
+        StringBuilder gptAnswer = new StringBuilder();
+
+        String gptMessageId = UUID.randomUUID().toString();
+        Instant createdDate = Instant.now();
+
+        gpt3Service.streamChat(messages.getFirst().getTextMessage().split("@gpt ")[1])
+                .doOnNext(chunk -> {
+                    String updatedContent = gptAnswer.append(chunk).toString();
+                    sink.emitNext(Message.builder()
+                            .id(gptMessageId)
+                            .userId(1L)
+                            .textMessage(updatedContent)
+                            .chatroomId(messages.getFirst().getChatroomId())
+                            .createdDate(createdDate)
+                            .build(), Sinks.EmitFailureHandler.FAIL_FAST);
+                })
+                .doOnError(e -> log.error("Error in GPT streaming: {}", e.getMessage()))
+                .publishOn(Schedulers.boundedElastic())
+                .doFinally(signalType -> {
+                    sink.emitNext(Message.builder()
+                            .id(gptMessageId)
+                            .userId(1L)
+                            .textMessage("Gpt Finished message")
+                            .chatroomId(messages.getFirst().getChatroomId())
+                            .createdDate(createdDate)
+                            .build(), Sinks.EmitFailureHandler.FAIL_FAST);
+
+
+                    Message gptCompleteMessage = Message.builder()
+                            .id(gptMessageId)
+                            .userId(1L)
+                            .textMessage(gptAnswer.toString())
+                            .chatroomId(messages.getFirst().getChatroomId())
                             .createdDate(createdDate)
                             .build();
 
