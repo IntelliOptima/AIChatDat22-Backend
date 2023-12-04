@@ -40,6 +40,7 @@ public class ChatroomUsersRelationServiceImpl implements IChatRoomUsersRelationS
 
     @Override
     public Mono<ChatroomUsersRelation> addUserToChatroom(String chatroomId, String userEmailToAdd) {
+
         return userRepository.findUserByEmail(userEmailToAdd)
                 .map(User::id)
                 .flatMap(userId -> chatroomUsersRelationRepository.findByUserIdAndChatroomId(userId, chatroomId)
