@@ -27,9 +27,9 @@ public class ChatroomRestController {
     }
 
     @PostMapping("/addUser/{chatroomId}")
-    Mono<ChatroomUsersRelation> addUserToChatroom(@PathVariable String chatroomId, @RequestBody String userEmailToAdd) {
-        log.info("Adding user" +  userEmailToAdd  + " to chatroomId: " + chatroomId);
-        return chatRoomUsersRelationService.addUserToChatroom(chatroomId, userEmailToAdd);
+    Mono<ChatroomUsersRelation> addUserToChatroom(@PathVariable String chatroomId, @RequestBody String email) {
+        log.info("Adding user" +  email  + " to chatroomId: " + chatroomId);
+        return chatRoomUsersRelationService.addUserToChatroom(chatroomId, email);
     }
 
     @GetMapping("/participatingChatrooms/{userId}")
@@ -37,7 +37,7 @@ public class ChatroomRestController {
         return Mono.just(ResponseEntity.ok().body(chatroomService.findAllParticipatingChatrooms(userId)));
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/room/{id}")
     Mono<Chatroom> getChatroom(@PathVariable String id) {
         return chatroomService.findById(id);
     }
