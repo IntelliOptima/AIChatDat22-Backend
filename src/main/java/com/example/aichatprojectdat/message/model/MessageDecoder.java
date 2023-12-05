@@ -13,6 +13,7 @@ import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.util.MimeType;
 import reactor.core.publisher.Flux;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -35,18 +36,29 @@ public class MessageDecoder extends AbstractDecoder<List<Message>> {
                                       MimeType mimeType,
                                       Map<String, Object> hints) {
         return Flux.from(inputStream)
-                .map(dataBuffer -> {
+                .collectList()
+                .map(dataBuffers -> {
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    dataBuffers.forEach(dataBuffer -> {
+                        try {
+                            baos.write(dataBuffer.asByteBuffer().array());
+                        } catch (IOException e) {
+                            throw new DecodingException("Error occurred while reading DataBuffer", e);
+                        } finally {
+                            DataBufferUtils.release(dataBuffer);
+                        }
+                    });
+                    return baos.toByteArray();
+                })
+                .map(bytes -> {
                     try {
-                        byte[] bytes = new byte[dataBuffer.readableByteCount()];
-                        dataBuffer.read(bytes);
                         String json = new String(bytes, StandardCharsets.UTF_8);
                         return objectMapper.readValue(json, new TypeReference<List<Message>>() {});
                     } catch (IOException e) {
                         throw new DecodingException("Failed to decode", e);
-                    } finally {
-                        DataBufferUtils.release(dataBuffer);
                     }
-                });
+                })
+                .flatMapMany(Flux::just);
     }
 
     @Override
