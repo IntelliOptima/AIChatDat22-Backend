@@ -3,6 +3,7 @@ package com.example.aichatprojectdat.OpenAIModels.gpt.service;
 import com.example.aichatprojectdat.OpenAIModels.gpt.service.interfaces.IGPT3Service;
 import com.example.aichatprojectdat.message.model.Message;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.mvnsearch.chatgpt.model.completion.chat.ChatCompletionRequest;
 import org.mvnsearch.chatgpt.model.completion.chat.ChatCompletionResponse;
 import org.mvnsearch.chatgpt.model.completion.chat.ChatMessage;
@@ -12,13 +13,17 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.Instant;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Primary
 @Service
+@Slf4j
 public class GPT3ServiceImpl implements IGPT3Service {
 
     private final ChatGPTService chatGPTService;
@@ -42,52 +47,74 @@ public class GPT3ServiceImpl implements IGPT3Service {
 
     @Override
     public Flux<String> streamChatContext(List<Message> messages) {
+        // Process messages to build the chat completion request
+        var chatCompletionRequest = buildChatCompletionRequest(messages);
+
+        // Use the built request in the Flux stream
+        return chatGPTService.stream(chatCompletionRequest)
+                .map(ChatCompletionResponse::getReplyText);
+    }
+
+    private ChatCompletionRequest buildChatCompletionRequest(List<Message> messages) {
         var chatCompletionRequest = new ChatCompletionRequest();
         chatCompletionRequest.addMessage(ChatMessage.systemMessage(gptInstruction()));
+        System.out.println(messages);
 
-        // Sort messages from newest to oldest
-        messages.sort(Comparator.comparing(Message::getCreatedDate).reversed());
+        messages.get(messages.size() - 1).setCreatedDate(Instant.now());
 
         int tokenCount = 0;
-        int maxTokens = 32_000; // Set your max token limit
+        int maxTokens = 32_000;
+        Set<String> addedMessageIds = new HashSet<>();
 
         for (Message message : messages) {
-            String context = getMessageContext(message);
-            // Approximate token count by character count
-            tokenCount += context.length();
+            if (!addedMessageIds.contains(message.getId())) {
+                String context = getMessageContext(message);
+                tokenCount += context.length();
 
-            if (tokenCount <= maxTokens) {
-                chatCompletionRequest.addMessage(ChatMessage.userMessage(context));
-            } else {
-                break;
+                if (tokenCount <= maxTokens) {
+                    if (message.getUserId() == 2L) continue;
+                    if (message.getTextMessage().toLowerCase().contains("@gpt")) {
+                        String gptQuestion = message.getTextMessage().replace("@gpt", " ");
+                        chatCompletionRequest.addMessage(ChatMessage.userMessage(gptQuestion));
+                    } else if (message.getUserId() == 1L) {
+                        chatCompletionRequest.addMessage(ChatMessage.assistantMessage(context));
+                    } else {
+                        chatCompletionRequest.addMessage(ChatMessage.userMessage(context));
+                    }
+                    log.info("Adding message: " + message);
+                    addedMessageIds.add(message.getId());
+                } else {
+                    break;
+                }
             }
         }
 
         chatCompletionRequest.setMaxTokens(4096);
         chatCompletionRequest.setTemperature(1.0);
         chatCompletionRequest.setModel("gpt-3.5-turbo-1106");
-        return chatGPTService.stream(chatCompletionRequest)
-                .map(ChatCompletionResponse::getReplyText);
+        return chatCompletionRequest;
     }
-
 
     public String getMessageContext(Message message) {
-        return message.getUserId() + " said: " + message.getTextMessage();
+        if (message.getUserId() != 1) {
+            return message.getUserId() + " said: " + message.getTextMessage();
+        }
+        return message.getTextMessage();
     }
+
 
     private String gptInstruction() {
         return """
-            As an intelligent assistant in a multi-user chatroom, your role is to interact with users by responding
-            to their messages. Each message in this chatroom is formatted with a user ID followed by 'said:',
-            and then the message content, like '12345 said: Can you give me recipe ideas?'. Treat each user ID as
-            the name of the person speaking.
-            Prioritize responding to the newest messages first, as these are the most
-            immediate and relevant to the conversation. Address the user by their ID when
-            replying, and offer helpful and informed responses to their questions or comments.
-            Your aim is to engage with users by providing timely and contextually appropriate assistance,
-            treating each user ID as a unique individual in the chat. Focus on the most recent queries to
-            ensure the conversation is current and responsive to the latest inputs.
-            """;
+                As the intelligent assistant in this multi-user chatroom, be aware that your assigned user ID is 1.
+                This means that when you are mentioned or addressed in the chat, it will be under the user ID 1.
+                In this environment, you will see messages formatted with a user ID followed by 'said:', and then
+                the message content, like this: '12345 said: Can you give me recipe ideas?'. Treat each user ID as
+                the respective individual's name, and remember that your responses will be coming from user ID 1.
+                Your primary task is to address the most recent messages first, as they are the most immediate in the
+                conversation. When replying, refer to the users by their respective IDs and provide informed and thoughtful
+                responses to their questions or comments. Your aim is to engage actively and supportively in the chatroom,
+                treating each user ID as a unique individual, and responding from your designated user ID, which is 1.
+                """;
     }
 
 

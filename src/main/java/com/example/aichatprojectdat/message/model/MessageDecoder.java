@@ -1,7 +1,9 @@
 package com.example.aichatprojectdat.message.model;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
 import org.reactivestreams.Publisher;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.codec.AbstractDecoder;
@@ -17,7 +19,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-public class MessageDecoder extends AbstractDecoder<Message> {
+public class MessageDecoder extends AbstractDecoder<List<Message>> {
 
     private final ObjectMapper objectMapper;
 
@@ -28,16 +30,19 @@ public class MessageDecoder extends AbstractDecoder<Message> {
 
     @Override
     @NonNull
-    public Flux<Message> decode(@NonNull Publisher<DataBuffer> inputStream, @NonNull ResolvableType elementType, MimeType mimeType, Map<String, Object> hints) {
+    public Flux<List<Message>> decode(@NotNull Publisher<DataBuffer> inputStream,
+                                      @NotNull ResolvableType elementType,
+                                      MimeType mimeType,
+                                      Map<String, Object> hints) {
         return Flux.from(inputStream)
                 .map(dataBuffer -> {
                     try {
                         byte[] bytes = new byte[dataBuffer.readableByteCount()];
                         dataBuffer.read(bytes);
                         String json = new String(bytes, StandardCharsets.UTF_8);
-                        return objectMapper.readValue(json, Message.class);
+                        return objectMapper.readValue(json, new TypeReference<List<Message>>() {});
                     } catch (IOException e) {
-                        throw new RuntimeException("Failed to decode", e);
+                        throw new DecodingException("Failed to decode", e);
                     } finally {
                         DataBufferUtils.release(dataBuffer);
                     }
@@ -45,14 +50,17 @@ public class MessageDecoder extends AbstractDecoder<Message> {
     }
 
     @Override
-    public Message decode(DataBuffer buffer, @NonNull ResolvableType targetType, MimeType mimeType, Map<String, Object> hints) throws DecodingException {
+    public List<Message> decode(DataBuffer buffer,
+                                @NonNull ResolvableType targetType,
+                                MimeType mimeType,
+                                Map<String, Object> hints) throws DecodingException {
         try {
             byte[] bytes = new byte[buffer.readableByteCount()];
             buffer.read(bytes);
             String json = new String(bytes, StandardCharsets.UTF_8);
-            return objectMapper.readValue(json, Message.class);
+            return objectMapper.readValue(json, new TypeReference<List<Message>>() {});
         } catch (IOException e) {
-            throw new RuntimeException("Failed to decode", e);
+            throw new DecodingException("Failed to decode", e);
         } finally {
             DataBufferUtils.release(buffer);
         }
@@ -63,5 +71,4 @@ public class MessageDecoder extends AbstractDecoder<Message> {
     public List<MimeType> getDecodableMimeTypes() {
         return Collections.singletonList(MimeType.valueOf("application/octet-stream"));
     }
-
 }

@@ -93,25 +93,25 @@ public class ChatroomRSocketController {
 
     // Method for clients to send messages to a chatroom
     @MessageMapping("chat.send.{chatroomId}")
-    public void receiveMessage(@DestinationVariable String chatroomId, Message chatMessage) {
-        log.info("Received message: {}", chatMessage.getTextMessage());
+    public void receiveMessage(@DestinationVariable String chatroomId, List<Message> chatMessages) {
+        log.info("Received message: {}", chatMessages.get(chatMessages.size()-1).getTextMessage());
 
         Sinks.Many<Message> sink = chatroomSinks.computeIfAbsent(chatroomId, id ->
                 Sinks.many()
                         .multicast()
                         .onBackpressureBuffer());
 
-        emitReceivedMessage(chatMessage, sink);
+        emitReceivedMessage(chatMessages.get(chatMessages.size()-1), sink);
 
         // Check if the message is a GPT command
-        if (chatMessage.getTextMessage().toLowerCase().startsWith("@gpt")) {
+        if (chatMessages.get(chatMessages.size()-1).getTextMessage().toLowerCase().startsWith("@gpt")) {
             log.info("Emitting GPT Response");
-            handleGptMessage(chatMessage, sink);
+            handleGptContextMessage(chatMessages, sink);
         }
 
-        if (chatMessage.getTextMessage().toLowerCase().startsWith("@dalle")) {
+        if (chatMessages.get(0).getTextMessage().toLowerCase().startsWith("@dalle")) {
             log.info("Emitting DallE Response");
-            handleDallEMessage(chatMessage, sink);
+            handleDallEMessage(chatMessages.get(0), sink);
         }
     }
 
@@ -197,19 +197,20 @@ public class ChatroomRSocketController {
 
 
     public void handleGptContextMessage(List<Message> messages, Sinks.Many<Message> sink) {
+        log.info("IM RUNNING CONTEXT!");
         StringBuilder gptAnswer = new StringBuilder();
 
         String gptMessageId = UUID.randomUUID().toString();
         Instant createdDate = Instant.now();
 
-        gpt3Service.streamChat(messages.getFirst().getTextMessage().split("@gpt ")[1])
+        gpt3Service.streamChatContext(messages)
                 .doOnNext(chunk -> {
                     String updatedContent = gptAnswer.append(chunk).toString();
                     sink.emitNext(Message.builder()
                             .id(gptMessageId)
                             .userId(1L)
                             .textMessage(updatedContent)
-                            .chatroomId(messages.getFirst().getChatroomId())
+                            .chatroomId(messages.get(messages.size() -1).getChatroomId())
                             .createdDate(createdDate)
                             .build(), Sinks.EmitFailureHandler.FAIL_FAST);
                 })
@@ -220,7 +221,7 @@ public class ChatroomRSocketController {
                             .id(gptMessageId)
                             .userId(1L)
                             .textMessage("Gpt Finished message")
-                            .chatroomId(messages.getFirst().getChatroomId())
+                            .chatroomId(messages.get(messages.size() -1).getChatroomId())
                             .createdDate(createdDate)
                             .build(), Sinks.EmitFailureHandler.FAIL_FAST);
 
@@ -229,7 +230,7 @@ public class ChatroomRSocketController {
                             .id(gptMessageId)
                             .userId(1L)
                             .textMessage(gptAnswer.toString())
-                            .chatroomId(messages.getFirst().getChatroomId())
+                            .chatroomId(messages.get(messages.size() -1).getChatroomId())
                             .createdDate(createdDate)
                             .build();
 
