@@ -25,7 +25,7 @@ public class MessageDecoder extends AbstractDecoder<List<Message>> {
     private final ObjectMapper objectMapper;
 
     public MessageDecoder(ObjectMapper objectMapper) {
-        super(MimeType.valueOf("application/octet-stream"));
+        super(MimeType.valueOf("application/json"));
         this.objectMapper = objectMapper;
     }
 
@@ -35,30 +35,22 @@ public class MessageDecoder extends AbstractDecoder<List<Message>> {
                                       @NotNull ResolvableType elementType,
                                       MimeType mimeType,
                                       Map<String, Object> hints) {
-        return Flux.from(inputStream)
-                .collectList()
-                .map(dataBuffers -> {
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                    dataBuffers.forEach(dataBuffer -> {
-                        try {
-                            baos.write(dataBuffer.asByteBuffer().array());
-                        } catch (IOException e) {
-                            throw new DecodingException("Error occurred while reading DataBuffer", e);
-                        } finally {
-                            DataBufferUtils.release(dataBuffer);
-                        }
-                    });
-                    return baos.toByteArray();
-                })
-                .map(bytes -> {
+
+        return DataBufferUtils.join(inputStream) // Join all DataBuffers into one
+                .flux() // Convert Mono<DataBuffer> to Flux<DataBuffer>
+                .flatMap(dataBuffer -> {
                     try {
+                        byte[] bytes = new byte[dataBuffer.readableByteCount()];
+                        dataBuffer.read(bytes);
+                        DataBufferUtils.release(dataBuffer); // Release the dataBuffer
+
                         String json = new String(bytes, StandardCharsets.UTF_8);
-                        return objectMapper.readValue(json, new TypeReference<List<Message>>() {});
+                        List<Message> messages = objectMapper.readValue(json, new TypeReference<List<Message>>() {});
+                        return Flux.just(messages); // Return a Flux containing the list of messages
                     } catch (IOException e) {
-                        throw new DecodingException("Failed to decode", e);
+                        return Flux.error(new DecodingException("Failed to decode", e));
                     }
-                })
-                .flatMapMany(Flux::just);
+                });
     }
 
     @Override
@@ -81,6 +73,6 @@ public class MessageDecoder extends AbstractDecoder<List<Message>> {
     @Override
     @NonNull
     public List<MimeType> getDecodableMimeTypes() {
-        return Collections.singletonList(MimeType.valueOf("application/octet-stream"));
+        return Collections.singletonList(MimeType.valueOf("application/json"));
     }
 }
