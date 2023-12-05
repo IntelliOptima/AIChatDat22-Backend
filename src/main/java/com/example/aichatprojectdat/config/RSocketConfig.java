@@ -36,7 +36,7 @@ public class RSocketConfig {
     public RSocketStrategies rSocketStrategies(ObjectMapper objectMapper) {
         return RSocketStrategies.builder()
                 .metadataExtractorRegistry(registry -> {
-                    registry.metadataToExtract(MimeTypeUtils.APPLICATION_JSON, Map.class, "headers");
+                    registry.metadataToExtract(MimeTypeUtils.APPLICATION_OCTET_STREAM, Map.class, "headers");
                 })
                 .decoder(new Jackson2JsonDecoder())
                 .encoder(new Jackson2JsonEncoder())
