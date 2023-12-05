@@ -21,7 +21,7 @@ public class MessageEncoder extends AbstractEncoder<Message> {
     private final ObjectMapper objectMapper;
 
     public MessageEncoder(ObjectMapper objectMapper) {
-        super(MimeType.valueOf("application/octet-stream"));
+        super(MimeType.valueOf("application/json"));
         this.objectMapper = objectMapper;
     }
 
@@ -57,6 +57,6 @@ public class MessageEncoder extends AbstractEncoder<Message> {
     @Override
     @NonNull
     public List<MimeType> getEncodableMimeTypes() {
-        return Collections.singletonList(MimeType.valueOf("application/octet-stream"));
+        return Collections.singletonList(MimeType.valueOf("application/json"));
     }
 }

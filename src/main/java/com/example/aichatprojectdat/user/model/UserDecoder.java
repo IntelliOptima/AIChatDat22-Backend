@@ -23,9 +23,10 @@ public class UserDecoder extends AbstractDecoder<User> {
     private final ObjectMapper objectMapper;
 
     public UserDecoder(ObjectMapper objectMapper) {
-        super(MimeType.valueOf("application/octet-stream"));
+        super(MimeType.valueOf("application/json")); // Changed to application/json
         this.objectMapper = objectMapper;
     }
+
     @Override
     @NonNull
     public Flux<User> decode(@NonNull Publisher<DataBuffer> inputStream, @NonNull ResolvableType elementType, MimeType mimeType, Map<String, Object> hints) {
@@ -37,7 +38,7 @@ public class UserDecoder extends AbstractDecoder<User> {
                         String json = new String(bytes, StandardCharsets.UTF_8);
                         return objectMapper.readValue(json, User.class);
                     } catch (IOException e) {
-                        throw new RuntimeException("Failed to decode", e);
+                        throw new DecodingException("Failed to decode", e); // Changed to DecodingException
                     } finally {
                         DataBufferUtils.release(dataBuffer);
                     }
@@ -52,7 +53,7 @@ public class UserDecoder extends AbstractDecoder<User> {
             String json = new String(bytes, StandardCharsets.UTF_8);
             return objectMapper.readValue(json, User.class);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to decode", e);
+            throw new DecodingException("Failed to decode", e); // Changed to DecodingException
         } finally {
             DataBufferUtils.release(buffer);
         }
@@ -61,6 +62,6 @@ public class UserDecoder extends AbstractDecoder<User> {
     @Override
     @NonNull
     public List<MimeType> getDecodableMimeTypes() {
-        return Collections.singletonList(MimeType.valueOf("application/octet-stream"));
+        return Collections.singletonList(MimeType.valueOf("application/json")); // Changed to application/json
     }
 }
