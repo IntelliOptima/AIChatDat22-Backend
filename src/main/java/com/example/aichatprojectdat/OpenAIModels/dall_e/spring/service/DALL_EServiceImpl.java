@@ -8,6 +8,7 @@ import com.example.aichatprojectdat.OpenAIModels.dall_e.spring.service.interface
 
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Service
@@ -23,7 +24,7 @@ public class DALL_EServiceImpl implements IDALL_EService {
 
 
     @Override
-    public Mono<ImageGenerationResponse> generateImage(ImageGenerationRequest request) {
+    public Flux<ImageGenerationResponse> generateImage(ImageGenerationRequest request) {
         if (request.getModel() == null) {
             request.setModel(this.model);
         }

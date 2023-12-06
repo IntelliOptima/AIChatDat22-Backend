@@ -5,13 +5,14 @@ import com.example.aichatprojectdat.OpenAIModels.dall_e.model.generation.ImageGe
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.service.annotation.PostExchange;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 
 public interface CustomOpenAI_DALL_E_API {
 
     @PostExchange("/images/generations")
-    Mono<ImageGenerationResponse> imageGenerate(@RequestBody ImageGenerationRequest request);
+    Flux<ImageGenerationResponse> imageGenerate(@RequestBody ImageGenerationRequest request);
 
     @PostExchange("/images/edit")
     Mono<ImageGenerationResponse> editImageGeneration(@RequestBody ImageGenerationRequest request);

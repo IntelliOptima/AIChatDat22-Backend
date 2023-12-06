@@ -10,6 +10,7 @@ import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.io.File;
@@ -26,7 +27,7 @@ public class DALL_E3ServiceStandardImpl implements IDALL_E3ServiceStandard {
     }
 
     @Override
-    public Mono<ImageGenerationResponse> generateImage(String request) {
+    public Flux<ImageGenerationResponse> generateImage(String request) {
         return dallEService.generateImage(ImageRequestBuilder.of(request)
                         .n(1)
                         .size("1024x1024")
