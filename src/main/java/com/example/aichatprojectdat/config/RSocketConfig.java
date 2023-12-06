@@ -56,7 +56,8 @@ public class RSocketConfig {
 
     @Bean
     public RSocketServerCustomizer rSocketServerCustomizer() {
-        return rSocketServer -> rSocketServer.payloadDecoder(PayloadDecoder.ZERO_COPY);
+        return rSocketServer -> rSocketServer.payloadDecoder(PayloadDecoder.ZERO_COPY)
+                .fragment(65536);
     }
 
 //    @Bean
