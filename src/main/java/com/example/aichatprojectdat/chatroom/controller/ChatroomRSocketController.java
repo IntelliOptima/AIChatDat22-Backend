@@ -5,13 +5,11 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 import com.example.aichatprojectdat.OpenAIModels.dall_e.model.generation.ImageGenerationRequest;
 import com.example.aichatprojectdat.OpenAIModels.dall_e.service.IDALL_E3ServiceStandard;
 import com.example.aichatprojectdat.OpenAIModels.gpt.service.interfaces.IGPT3Service;
 import com.example.aichatprojectdat.OpenAIModels.gpt.service.interfaces.IGPT4Service;
-import com.example.aichatprojectdat.config.ChunkData;
 import com.example.aichatprojectdat.message.model.Message;
 import com.example.aichatprojectdat.message.model.ReadReceipt;
 import com.example.aichatprojectdat.message.service.IReadReceiptService;
@@ -26,7 +24,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.GroupedFlux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Schedulers;
@@ -68,7 +65,8 @@ public class ChatroomRSocketController {
 
     private void handleClientDisconnection(String chatroomId) {
 
-        log.info("Client disconnected from chatroom: " + chatroomId);
+        log.info("Client disconnected from chatroom:     " + chatroomId);
+
     }
 
     @MessageMapping("chat.online.{chatroomId}")
@@ -92,50 +90,30 @@ public class ChatroomRSocketController {
     }
 
 
+
+
     // Method for clients to send messages to a chatroom
     @MessageMapping("chat.send.{chatroomId}")
-    public Mono<Void> receiveMessage(@DestinationVariable String chatroomId, Flux<ChunkData> chunkData) {
-        return chunkData
-                .groupBy(ChunkData::getChunkIdentifier)
-                .flatMap(group -> processGroupedChunks(chatroomId, group))
-                .then();
-    }
+    public void receiveMessage(@DestinationVariable String chatroomId, List<Message> chatMessages) {
+        log.info("Received message: {}", chatMessages.get(chatMessages.size()-1).getTextMessage());
 
-    private Mono<Void> processGroupedChunks(String chatroomId, GroupedFlux<String, ChunkData> groupedChunks) {
-        return groupedChunks
-                .collectSortedList(Comparator.comparing(ChunkData::getStartIndex))
-                .filter(list -> list.stream().anyMatch(ChunkData::isLastChunk))
-                .flatMap(sortedChunks -> {
-                    List<Message> messages = sortedChunks.stream()
-                            .map(ChunkData::getChunk)
-                            .collect(Collectors.toList());
-                    return processMessages(chatroomId, messages);
-                });
-    }
+        Sinks.Many<Message> sink = chatroomSinks.computeIfAbsent(chatroomId, id ->
+                Sinks.many()
+                        .multicast()
+                        .onBackpressureBuffer());
 
+        emitReceivedMessage(chatMessages.get(chatMessages.size()-1), sink);
 
-    private Mono<Void> processMessages(String chatroomId, List<Message> messages) {
-        if (messages.isEmpty()) {
-            return Mono.empty(); // Return an empty Mono if the message list is empty
+        // Check if the message is a GPT command
+        if (chatMessages.get(chatMessages.size()-1).getTextMessage().toLowerCase().startsWith("@gpt")) {
+            log.info("Emitting GPT Response");
+            handleGptContextMessage(chatMessages, sink);
         }
 
-        Message lastMessage = messages.get(messages.size() - 1);
-
-        if (lastMessage.getTextMessage().toLowerCase().startsWith("@gpt")) {
-            return handleGptContextMessage(messages, chatroomSinks.get(chatroomId)).then();
-        } else if (lastMessage.getTextMessage().toLowerCase().startsWith("@dalle")) {
-            return handleDallEMessage(lastMessage, chatroomSinks.get(chatroomId)).then();
-        } else {
-            return processNormalMessages(messages, chatroomSinks.get(chatroomId));
+        if (chatMessages.get(0).getTextMessage().toLowerCase().startsWith("@dalle")) {
+            log.info("Emitting DallE Response");
+            handleDallEMessage(chatMessages.get(0), sink);
         }
-    }
-
-
-    // Example method for processing normal messages
-    private Mono<Void> processNormalMessages(List<Message> messages, Sinks.Many<Message> sink) {
-        // Emitting messages, handling other logic
-        messages.forEach(message -> emitReceivedMessage(message, sink));
-        return Mono.empty();
     }
 
     public void emitReceivedMessage(Message chatMessage, Sinks.Many<Message> sink) {
@@ -178,10 +156,10 @@ public class ChatroomRSocketController {
 
     public void handleGptMessage(Message chatMessage, Sinks.Many<Message> sink) {
         StringBuilder gptAnswer = new StringBuilder();
-        
+
         String gptMessageId = UUID.randomUUID().toString();
         Instant createdDate = Instant.now();
-        
+
         gpt3Service.streamChat(chatMessage.getTextMessage().split("@gpt ")[1])
                 .doOnNext(chunk -> {
                     String updatedContent = gptAnswer.append(chunk).toString();
@@ -219,14 +197,14 @@ public class ChatroomRSocketController {
     }
 
 
-    public Mono<Void> handleGptContextMessage(List<Message> messages, Sinks.Many<Message> sink) {
+    public void handleGptContextMessage(List<Message> messages, Sinks.Many<Message> sink) {
         log.info("IM RUNNING CONTEXT!");
         StringBuilder gptAnswer = new StringBuilder();
 
         String gptMessageId = UUID.randomUUID().toString();
         Instant createdDate = Instant.now();
 
-        return gpt3Service.streamChatContext(messages)
+        gpt3Service.streamChatContext(messages)
                 .doOnNext(chunk -> {
                     String updatedContent = gptAnswer.append(chunk).toString();
                     sink.emitNext(Message.builder()
@@ -259,15 +237,15 @@ public class ChatroomRSocketController {
 
                     messageService.create(gptCompleteMessage).subscribe();
                     gptAnswer.setLength(0);
-                }).then();
+                }).subscribe();
     }
 
 
-    public Mono<Void> handleDallEMessage(Message chatMessage, Sinks.Many<Message> sink) {
+    public void handleDallEMessage(Message chatMessage, Sinks.Many<Message> sink) {
 
         AtomicReference<Message> dalleMessageRef = new AtomicReference<>(); // AtomicReference to hold the dalleMessage
 
-        return iDallE3ServiceStandard.generateImage(chatMessage.getTextMessage().split("@dalle ")[1])
+        iDallE3ServiceStandard.generateImage(chatMessage.getTextMessage().split("@dalle ")[1])
                 .doFirst(() -> System.out.println(ImageGenerationRequest.of(chatMessage.getTextMessage()).toString()))
                 .publishOn(Schedulers.boundedElastic())
                 .doOnNext(response -> {
@@ -289,7 +267,7 @@ public class ChatroomRSocketController {
                     if (messageToSave != null) {
                         messageService.create(messageToSave).subscribe(); // Save the message
                     }
-                }).then();
+                }).subscribe();
     }
 
 
