@@ -35,15 +35,13 @@ public class RSocketConfig {
     }
 
     @Bean
-    public RSocketStrategies rSocketStrategies(ObjectMapper objectMapper) {
+    public RSocketStrategies rSocketStrategies() {
         return RSocketStrategies.builder()
                 .metadataExtractorRegistry(registry -> {
                     registry.metadataToExtract(MimeTypeUtils.APPLICATION_JSON, Map.class, "headers");
                 })
                 .decoder(new Jackson2JsonDecoder())
                 .encoder(new Jackson2JsonEncoder())
-                .decoder(new Jackson2CborDecoder())
-                .encoder(new Jackson2CborEncoder())
                 .build();
     }
 
