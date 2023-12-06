@@ -12,4 +12,5 @@ public interface MessageRepository extends R2dbcRepository<Message, String> {
     Flux<Message> findAllByChatroomIdOrderByCreatedDateAsc(String chatroomId);
 
 
+    Flux<Message> findAllByChatroomId(String chatroomId);
 }

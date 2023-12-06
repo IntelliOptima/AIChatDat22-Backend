@@ -53,7 +53,7 @@ public class ChatroomRestController {
     }
 
     @PostMapping("/leave/{chatroomId}/{userId}")
-    public Mono<ResponseEntity<Mono<Void>>> deleteChatroom(@PathVariable String chatroomId, @PathVariable Long userId) {
+    public Mono<ResponseEntity<Mono<Void>>> leaveChatroom(@PathVariable String chatroomId, @PathVariable Long userId) {
         return Mono.just(ResponseEntity.ok().body(chatRoomUsersRelationService.leaveChatroom(chatroomId, userId)));
     }
 

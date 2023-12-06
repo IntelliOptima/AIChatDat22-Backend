@@ -8,11 +8,14 @@ import com.example.aichatprojectdat.chatroom.repository.ChatroomUsersRelationRep
 import com.example.aichatprojectdat.message.model.Message;
 import com.example.aichatprojectdat.message.model.ReadReceipt;
 import com.example.aichatprojectdat.message.repository.MessageRepository;
+import com.example.aichatprojectdat.message.repository.ReadReceiptRepository;
 import com.example.aichatprojectdat.message.service.ReadReceiptServiceImpl;
 import com.example.aichatprojectdat.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
+import org.springframework.data.relational.core.query.Criteria;
+import org.springframework.data.relational.core.query.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
@@ -31,6 +34,7 @@ public class ChatroomServiceImpl implements IChatroomService {
     private final UserRepository userRepository;
     private final MessageRepository messageRepository;
     private final ReadReceiptServiceImpl readReceiptService;
+    private final ReadReceiptRepository readReceiptRepository;
 
 
     @Transactional
@@ -125,12 +129,22 @@ public class ChatroomServiceImpl implements IChatroomService {
 
     public Mono<Chatroom> delete(String chatroomId) {
         return chatroomUsersRelationRepository.findAllByChatroomId(chatroomId)
-                .flatMap(chatroomUsersRelation -> chatroomUsersRelationRepository.delete(chatroomUsersRelation)
-                        .then(Mono.empty()))
+                .flatMap(chatroomUsersRelation -> deleteMessages(chatroomId)
+                        .then(chatroomUsersRelationRepository.delete(chatroomUsersRelation)))
                 .switchIfEmpty(Mono.empty())
                 .then(chatroomRepository.findById(chatroomId)
-                        .flatMap(chatroomRepository::delete)
-                        .then(Mono.empty())
-                );
+                        .flatMap(chatroom -> chatroomRepository.delete(chatroom)
+                                .then(Mono.empty())));
     }
+
+    private Mono<Void> deleteMessages(String chatroomId) {
+        return messageRepository.findAllByChatroomId(chatroomId)
+                .flatMap(message -> {
+                    String messageId = message.getId(); // Assuming getId() method is available in your Message entity
+                    return readReceiptRepository.deleteByMessageId(messageId)
+                            .then(messageRepository.delete(message));
+                })
+                .then(Mono.empty());
+    }
+
 }
