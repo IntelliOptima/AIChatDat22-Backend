@@ -65,7 +65,8 @@ public class ChatroomRSocketController {
 
     private void handleClientDisconnection(String chatroomId) {
 
-        log.info("Client disconnected from chatroom: " + chatroomId);
+        log.info("Client disconnected from chatroom:     " + chatroomId);
+
     }
 
     @MessageMapping("chat.online.{chatroomId}")
