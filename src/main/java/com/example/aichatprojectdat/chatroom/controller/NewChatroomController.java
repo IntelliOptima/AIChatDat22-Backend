@@ -15,12 +15,15 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Schedulers;
 
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 
@@ -34,8 +37,15 @@ public class NewChatroomController {
     private final IGPT4Service gpt4Service;
     private final IDALL_E3ServiceStandard iDallE3ServiceStandard;
 
+    private final Map<String, Sinks.Many<ChunkData>> chatroomSinks = new ConcurrentHashMap<>();
+
+    private Sinks.Many<ChunkData> getOrCreateSink(String chatroomId) {
+        return chatroomSinks.computeIfAbsent(chatroomId, id -> Sinks.many().multicast().onBackpressureBuffer());
+    }
+
     @MessageMapping("chat.{chatroomId}")
     public Flux<ChunkData> handleMessages(@DestinationVariable String chatroomId, Flux<ChunkData> incomingChunkData) {
+        Sinks.Many<ChunkData> chatroomSink = getOrCreateSink(chatroomId);
         log.info("User connected!");
         return incomingChunkData
                 .groupBy(ChunkData::identifier) // Group by chunkIdentifier
@@ -60,7 +70,9 @@ public class NewChatroomController {
                                         return processRegularMessage(lastChunk.chunk());
                                     }
                                 })
-                );
+                )
+                .doOnNext(chatroomSink::tryEmitNext)
+                .publishOn(Schedulers.boundedElastic());
     }
 
 

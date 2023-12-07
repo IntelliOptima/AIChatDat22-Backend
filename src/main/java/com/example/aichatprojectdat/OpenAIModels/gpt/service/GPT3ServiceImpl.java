@@ -49,6 +49,9 @@ public class GPT3ServiceImpl implements IGPT3Service {
     public Flux<String> streamChatContext(List<Message> messages) {
         // Process messages to build the chat completion request
         var chatCompletionRequest = buildChatCompletionRequest(messages);
+        for (ChatMessage message : chatCompletionRequest.getMessages()) {
+            log.info("Message added: {}", message.getContent());
+        }
 
         // Use the built request in the Flux stream
         return chatGPTService.stream(chatCompletionRequest)
@@ -58,7 +61,6 @@ public class GPT3ServiceImpl implements IGPT3Service {
     private ChatCompletionRequest buildChatCompletionRequest(List<Message> messages) {
         var chatCompletionRequest = new ChatCompletionRequest();
         chatCompletionRequest.addMessage(ChatMessage.systemMessage(gptInstruction()));
-        System.out.println(messages);
 
         messages.get(messages.size() - 1).setCreatedDate(Instant.now());
 
@@ -73,8 +75,8 @@ public class GPT3ServiceImpl implements IGPT3Service {
 
                 if (tokenCount <= maxTokens) {
                     if (message.getUserId() == 2L) continue;
-                    if (message.getTextMessage().toLowerCase().contains("@gpt")) {
-                        String gptQuestion = message.getTextMessage().replace("@gpt", " ");
+                    if (context.toLowerCase().contains("@gpt")) {
+                        String gptQuestion = context.replace("@gpt", "");
                         chatCompletionRequest.addMessage(ChatMessage.userMessage(gptQuestion));
                     } else if (message.getUserId() == 1L) {
                         chatCompletionRequest.addMessage(ChatMessage.assistantMessage(context));
