@@ -15,8 +15,10 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -34,24 +36,28 @@ public class NewChatroomController {
 
     @MessageMapping("chat.{chatroomId}")
     public Flux<ChunkData> handleMessages(@DestinationVariable String chatroomId, Flux<ChunkData> incomingChunkData) {
-        log.info("user connected!");
+        log.info("User connected!");
         return incomingChunkData
                 .groupBy(ChunkData::identifier) // Group by chunkIdentifier
                 .flatMap(groupedFlux ->
-                        groupedFlux.collectList() // Collect all ChunkData in the group into a list
+                        groupedFlux
+                                .collectList() // Collect all ChunkData in the group into a list
                                 .flatMapMany(chunkDataList -> {
-                                    if (isLastChunkReceived(chunkDataList)) {
-                                        if (isGptMessage(chunkDataList)) {
-                                            return handleGptContextMessage(chatroomId, chunkDataList);
-                                        } else if (isDalleMessage(chunkDataList)) {
-                                            return handleDallEMessage(chatroomId, chunkDataList);
-                                        } else {
-                                            return Flux.fromIterable(chunkDataList)
-                                                    .flatMap(chunkData -> processRegularMessage(chunkData.chunk()));
-                                        }
-                                    } else {
-                                        // If the last chunk hasn't been received, continue collecting chunks
+                                    if (chunkDataList.isEmpty()) {
+                                        log.warn("Received empty chunk data list");
                                         return Flux.empty();
+                                    }
+
+                                    chunkDataList.sort(Comparator.comparing(ChunkData::startIndex));
+                                    ChunkData lastChunk = chunkDataList.get(chunkDataList.size() - 1);
+
+                                    if (isGptMessage(chunkDataList) && isLastChunkReceived(chunkDataList)) {
+                                        return handleGptContextMessage(chatroomId, chunkDataList);
+                                    } else if (isDalleMessage(chunkDataList)) {
+                                        return handleDallEMessage(chatroomId, chunkDataList);
+                                    } else {
+                                        log.info("Handling regular message");
+                                        return processRegularMessage(lastChunk.chunk());
                                     }
                                 })
                 );
@@ -65,66 +71,69 @@ public class NewChatroomController {
 
         log.info("The size of messages is {}", messages.size());
 
-        // Extract the original message and emit it first
-        Message originalMessage = chunkDataList.get(0).chunk();
-        ChunkData originalChunkData = ChunkData.of(
-                UUID.randomUUID().toString(),
-                originalMessage,
-                1L,
-                null,
-                true);
+        // Extract the original message
+        Message originalMessage = chunkDataList.get(chunkDataList.size() - 1).chunk();
+        Instant originalMessageCreated = Instant.now();
+        originalMessage.setCreatedDate(originalMessageCreated);
+        originalMessage.setLastModifiedDate(originalMessageCreated);
 
-        // Save and then emit the original question message as a Flux
-        Flux<ChunkData> originalMessageFlux = Flux.just(originalChunkData)
-                .flatMap(chunkData -> messageService.create(chunkData.chunk())
-                        .then(Mono.just(chunkData)));
+        log.info("Processing original message: {} ", originalMessage);
 
-        log.info("Handling GPT context message");
         String gptMessageId = UUID.randomUUID().toString();
         Instant createdDate = Instant.now();
         StringBuilder gptAnswer = new StringBuilder();
 
-        Flux<ChunkData> gptResponseFlux = gpt3Service.streamChatContext(messages)
-                .flatMap(chunk -> {
-                    gptAnswer.append(chunk);
-                    // Emit each chunk as a separate message
-                    return Flux.just(
-                            ChunkData.of(gptMessageId,
-                                    Message.builder()
-                                    .id(gptMessageId)
-                                    .userId(1L)
-                                    .textMessage(chunk)
-                                    .chatroomId(chatroomId)
-                                    .createdDate(createdDate)
-                                    .build(),
-                                    (long) gptAnswer.length(),
-                                    null,
-                                    false));
-                })
-                .concatWith(Mono.defer(() -> {
-                    // Construct and emit the complete message after all chunks are processed
-                    ChunkData gptCompleteChunkData = ChunkData.of(gptMessageId,
-                            Message.builder()
-                                    .id(gptMessageId)
-                                    .userId(1L)
-                                    .textMessage(gptAnswer.toString())
-                                    .chatroomId(chatroomId)
-                                    .createdDate(createdDate)
-                                    .build(),
-                            (long) gptAnswer.length(),
-                            null,
-                            false);
+        // Save and then emit the original message
+        return messageService.create(originalMessage)
+                .thenMany(Flux.just(ChunkData.of(
+                        UUID.randomUUID().toString(),
+                        originalMessage,
+                        1L,
+                        null,
+                        true)))
+                .concatWith(
+                        gpt3Service.streamChatContext(messages)
+                                .flatMap(chunk -> {
+                                    gptAnswer.append(chunk);
+                                    // Emit each chunk as a separate message
+                                    return Flux.just(
+                                            ChunkData.of(UUID.randomUUID().toString(),
+                                                    Message.builder()
+                                                            .id(gptMessageId)
+                                                            .userId(1L)
+                                                            .textMessage(chunk)
+                                                            .chatroomId(chatroomId)
+                                                            .createdDate(Instant.now())
+                                                            .build(),
+                                                    (long) chunk.length(),
+                                                    null,
+                                                    false));
+                                }))
+                .publishOn(Schedulers.boundedElastic())
+                .doOnComplete(() -> {
+                    // Save the complete message to the database after all chunks are processed
+                    Message completeMessage = Message.builder()
+                            .id(gptMessageId)
+                            .userId(1L)
+                            .textMessage(gptAnswer.toString())
+                            .chatroomId(chatroomId)
+                            .createdDate(createdDate)
+                            .build();
 
-                    return messageService.create(gptCompleteChunkData.chunk()).thenReturn(gptCompleteChunkData);
-                }));
-        return Flux.concat(originalMessageFlux, gptResponseFlux);
+                    messageService.create(completeMessage).subscribe();
+                });
     }
+
+
+
 
     private Flux<ChunkData> processRegularMessage(Message message) {
         // Process a regular chat message
-        ChunkData chunkData = ChunkData.of(UUID.randomUUID().toString(), message, 1L, 1L,true);
+        log.info("Processing regular message: {}", message);
+        ChunkData chunkData = ChunkData.of(UUID.randomUUID().toString(), message, 1L, 1L, true);
+
         return messageService.create(chunkData.chunk()) // Assuming messageService.create returns a Mono<Message>
-                .then(Mono.just(chunkData))
+                .flatMap(createdMessage -> Mono.just(chunkData))
                 .flux();
     }
 
@@ -160,13 +169,13 @@ public class NewChatroomController {
 
     private boolean isGptMessage(List<ChunkData> chunkDataList) {
         log.info(chunkDataList.toString());
-        Message chunk = chunkDataList.get(0).chunk();
+        Message chunk = chunkDataList.get(chunkDataList.size() - 1).chunk();
         return chunk != null && chunk.getTextMessage().toLowerCase().startsWith("@gpt");
     }
 
     private boolean isDalleMessage(List<ChunkData> chunkDataList) {
         log.info(chunkDataList.toString());
-        Message chunk = chunkDataList.get(0).chunk();
+        Message chunk = chunkDataList.get(chunkDataList.size() - 1).chunk();
         return chunk != null && chunk.getTextMessage().toLowerCase().startsWith("@dalle");
     }
 
