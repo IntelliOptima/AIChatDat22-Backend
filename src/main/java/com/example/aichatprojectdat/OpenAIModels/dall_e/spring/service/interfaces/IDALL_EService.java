@@ -4,11 +4,12 @@ package com.example.aichatprojectdat.OpenAIModels.dall_e.spring.service.interfac
 import com.example.aichatprojectdat.OpenAIModels.dall_e.model.generation.ImageGenerationRequest;
 import com.example.aichatprojectdat.OpenAIModels.dall_e.model.generation.ImageGenerationResponse;
 
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 public interface IDALL_EService {
 
-    Mono<ImageGenerationResponse> generateImage(ImageGenerationRequest question);
+    Flux<ImageGenerationResponse> generateImage(ImageGenerationRequest question);
     Mono<ImageGenerationResponse> editGenerateImage(ImageGenerationRequest question);
     Mono<ImageGenerationResponse> variationGenerateImage(ImageGenerationRequest question);
 

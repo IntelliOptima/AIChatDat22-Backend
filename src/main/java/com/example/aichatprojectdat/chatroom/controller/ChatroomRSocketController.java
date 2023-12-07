@@ -65,7 +65,8 @@ public class ChatroomRSocketController {
 
     private void handleClientDisconnection(String chatroomId) {
 
-        log.info("Client disconnected from chatroom: " + chatroomId);
+        log.info("Client disconnected from chatroom:     " + chatroomId);
+
     }
 
     @MessageMapping("chat.online.{chatroomId}")
@@ -155,10 +156,10 @@ public class ChatroomRSocketController {
 
     public void handleGptMessage(Message chatMessage, Sinks.Many<Message> sink) {
         StringBuilder gptAnswer = new StringBuilder();
-        
+
         String gptMessageId = UUID.randomUUID().toString();
         Instant createdDate = Instant.now();
-        
+
         gpt3Service.streamChat(chatMessage.getTextMessage().split("@gpt ")[1])
                 .doOnNext(chunk -> {
                     String updatedContent = gptAnswer.append(chunk).toString();
