@@ -3,6 +3,7 @@ package com.example.aichatprojectdat.chatroom.controller;
 import com.example.aichatprojectdat.OpenAIModels.dall_e.service.IDALL_E3ServiceStandard;
 import com.example.aichatprojectdat.OpenAIModels.gpt.service.interfaces.IGPT3Service;
 import com.example.aichatprojectdat.OpenAIModels.gpt.service.interfaces.IGPT4Service;
+import com.example.aichatprojectdat.chatroom.model.ChatroomSink;
 import com.example.aichatprojectdat.message.model.ChunkData;
 import com.example.aichatprojectdat.message.model.Message;
 
@@ -11,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 
@@ -37,16 +39,21 @@ public class NewChatroomController {
     private final IGPT4Service gpt4Service;
     private final IDALL_E3ServiceStandard iDallE3ServiceStandard;
 
-    private final Map<String, Sinks.Many<ChunkData>> chatroomSinks = new ConcurrentHashMap<>();
 
-    private Sinks.Many<ChunkData> getOrCreateSink(String chatroomId) {
-        return chatroomSinks.computeIfAbsent(chatroomId, id -> Sinks.many().multicast().onBackpressureBuffer());
+    private final Map<String, ChatroomSink> chatroomSinks = new ConcurrentHashMap<>();
+
+    private ChatroomSink getOrCreateChatroomSink(String chatroomId) {
+        return chatroomSinks.computeIfAbsent(chatroomId, id -> new ChatroomSink());
     }
+
+
 
     @MessageMapping("chat.{chatroomId}")
     public Flux<ChunkData> handleMessages(@DestinationVariable String chatroomId, Flux<ChunkData> incomingChunkData) {
-        Sinks.Many<ChunkData> chatroomSink = getOrCreateSink(chatroomId);
-        log.info("User connected!");
+        ChatroomSink chatroomSinkWrapper = getOrCreateChatroomSink(chatroomId);
+        Sinks.Many<ChunkData> chatroomSink = chatroomSinkWrapper.getSink();
+        log.info("User connected to chatroom {}", chatroomId);
+
         return incomingChunkData
                 .groupBy(ChunkData::identifier) // Group by chunkIdentifier
                 .flatMap(groupedFlux ->
@@ -73,6 +80,16 @@ public class NewChatroomController {
                 )
                 .doOnNext(chatroomSink::tryEmitNext)
                 .publishOn(Schedulers.boundedElastic());
+    }
+
+    private Flux<ChunkData> processRegularMessage(Message message) {
+        // Process a regular chat message
+        log.info("Processing regular message: {}", message);
+        ChunkData chunkData = ChunkData.of(UUID.randomUUID().toString(), message, 1L, 1L, true);
+
+        return messageService.create(chunkData.chunk()) // Assuming messageService.create returns a Mono<Message>
+                .flatMap(createdMessage -> Mono.just(chunkData))
+                .flux();
     }
 
 
@@ -137,18 +154,6 @@ public class NewChatroomController {
     }
 
 
-
-
-    private Flux<ChunkData> processRegularMessage(Message message) {
-        // Process a regular chat message
-        log.info("Processing regular message: {}", message);
-        ChunkData chunkData = ChunkData.of(UUID.randomUUID().toString(), message, 1L, 1L, true);
-
-        return messageService.create(chunkData.chunk()) // Assuming messageService.create returns a Mono<Message>
-                .flatMap(createdMessage -> Mono.just(chunkData))
-                .flux();
-    }
-
     private Flux<ChunkData> handleDallEMessage(String chatroomId, List<ChunkData> chunkData) {
         // Logic to handle Dall-E message
         String dalleCommand = chunkData.get(0).chunk().getTextMessage().split("@dalle ")[1];
@@ -193,5 +198,44 @@ public class NewChatroomController {
 
     private boolean isLastChunkReceived(List<ChunkData> chunkDataList) {
         return chunkDataList.stream().anyMatch(ChunkData::isLastChunk);
+    }
+
+
+
+    // Sink logic:
+    //@Scheduled(fixedDelay = 60000) // Run every 60 seconds, for example
+    public void cleanUpInactiveChatrooms() {
+        chatroomSinks.entrySet().removeIf(entry -> {
+            String chatroomId = entry.getKey();
+            ChatroomSink chatroomSink = entry.getValue();
+
+            if (chatroomSink.hasSubscribers()) {
+                // Additional cleanup logic if needed
+                return true; // Remove the chatroom as it's inactive
+            }
+            return false;
+        });
+    }
+
+    public void handleClientDisconnect(String subscriberId) {
+        // Iterate over all chatrooms and remove the subscriber
+        chatroomSinks.forEach((chatroomId, chatroomSink) -> {
+            chatroomSink.removeSubscriber(subscriberId);
+        });
+    }
+
+    public void addSubscriberToChatroom(String chatroomId, String subscriberId) {
+        ChatroomSink chatroomSink = getOrCreateChatroomSink(chatroomId);
+        chatroomSink.addSubscriber(subscriberId);
+    }
+
+    public void removeSubscriberFromChatroom(String chatroomId, String subscriberId) {
+        ChatroomSink chatroomSink = chatroomSinks.get(chatroomId);
+        if (chatroomSink != null) {
+            chatroomSink.removeSubscriber(subscriberId);
+            if (chatroomSink.hasSubscribers()) {
+                chatroomSinks.remove(chatroomId); // Remove if no subscribers
+            }
+        }
     }
 }
