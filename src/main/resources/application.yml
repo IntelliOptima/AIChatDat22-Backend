@@ -12,10 +12,10 @@ spring:
     server:
       transport: websocket
       mapping-path: "/rsocket"
-      fragment-size: 131072
+      fragment-size: 65536
 
   codec:
-    max-in-memory-size: 10MB
+    max-in-memory-size: 50MB
 
 
   lifecycle:
