@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.Arrays;
+
 @RestController
 @RequiredArgsConstructor
 @CrossOrigin
@@ -27,9 +29,9 @@ public class ChatroomRestController {
     }
 
     @PostMapping("/addUser/{chatroomId}")
-    Mono<ChatroomUsersRelation> addUserToChatroom(@PathVariable String chatroomId, @RequestBody String email) {
-        log.info("Adding user" +  email  + " to chatroomId: " + chatroomId);
-        return chatRoomUsersRelationService.addUserToChatroom(chatroomId, email);
+    Flux<ChatroomUsersRelation> addUserToChatroom(@PathVariable String chatroomId, @RequestBody String[] emails) {
+        log.info("Adding user" + Arrays.toString(emails) + " to chatroomId: " + chatroomId);
+        return chatRoomUsersRelationService.addUserToChatroom(chatroomId, emails);
     }
 
     @GetMapping("/participatingChatrooms/{userId}")

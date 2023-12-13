@@ -1,6 +1,7 @@
 package com.example.aichatprojectdat.chatroom.service;
 
 import com.example.aichatprojectdat.chatroom.exception.NotFoundException;
+import com.example.aichatprojectdat.chatroom.exception.UserChatroomAdditionStatus;
 import com.example.aichatprojectdat.chatroom.model.ChatroomUsersRelation;
 import com.example.aichatprojectdat.chatroom.repository.ChatroomRepository;
 import com.example.aichatprojectdat.chatroom.repository.ChatroomUsersRelationRepository;
@@ -42,15 +43,17 @@ public class ChatroomUsersRelationServiceImpl implements IChatRoomUsersRelationS
     }
 
     @Override
-    public Mono<ChatroomUsersRelation> addUserToChatroom(String chatroomId, String userEmailToAdd) {
-
-        return userRepository.findUserByEmail(userEmailToAdd)
-                .map(User::id)
-                .flatMap(userId -> chatroomUsersRelationRepository.findByUserIdAndChatroomId(userId, chatroomId)
-                        .switchIfEmpty(chatroomUsersRelationRepository
-                                .save(ChatroomUsersRelation.of(chatroomId, userId))))
-                .switchIfEmpty(Mono.error(new NotFoundException("User not found with email: " + userEmailToAdd)));
+    public Flux<ChatroomUsersRelation> addUserToChatroom(String chatroomId, String[] userEmailsToAdd) {
+        return Flux.fromArray(userEmailsToAdd)
+                .flatMap(email -> userRepository.findUserByEmail(email)
+                        .flatMap(user -> chatroomUsersRelationRepository.findByUserIdAndChatroomId(user.id(), chatroomId)
+                                .switchIfEmpty(chatroomUsersRelationRepository.save(ChatroomUsersRelation.of(chatroomId, user.id())))
+                        )
+                        .switchIfEmpty(Mono.error(new NotFoundException("User not found with email: " + email)))
+                );
     }
+
+
 
 
     @Override
