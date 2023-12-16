@@ -22,7 +22,7 @@ spring:
     timeout-per-shutdown-phase: 15s
 
   r2dbc:
-    url: r2dbc:mysql://aichatproject.mysql.database.azure.com/chataidb_test?
+    url: r2dbc:mysql://aichatproject.mysql.database.azure.com/test_chataidb?
     username: azureuser
     password: Keadat22!
     pool:
@@ -32,7 +32,7 @@ spring:
 
 
   flyway:
-    url: jdbc:mysql://aichatproject.mysql.database.azure.com/chataidb_test?
+    url: jdbc:mysql://aichatproject.mysql.database.azure.com/test_chataidb?
     user: ${spring.r2dbc.username}
     password: ${spring.r2dbc.password}
 

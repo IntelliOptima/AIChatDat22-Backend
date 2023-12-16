@@ -1,11 +1,15 @@
 package com.example.aichatprojectdat.config;
 
 import com.example.aichatprojectdat.chatroom.controller.ReactiveWebsocketHandler;
+import io.netty.handler.codec.http.HttpMethod;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.reactive.CorsConfigurationSource;
+import org.springframework.web.cors.reactive.CorsWebFilter;
 import org.springframework.web.reactive.HandlerMapping;
 import org.springframework.web.reactive.handler.SimpleUrlHandlerMapping;
 import org.springframework.web.reactive.socket.WebSocketHandler;
@@ -52,17 +56,33 @@ public class ReactiveWebsocketConfig {
         return new HandshakeWebSocketService(nettyRequestUpgradeStrategy);
     }
 
-    /* Not sure but guess this is only needed for servlet websocket connection - controller
     @Bean
-    public ServerEndpointExporter serverEndpointExporter() {
-        ServerEndpointExporter serverEndpointExporter = new ServerEndpointExporter();
-
-        *//**
-         * Add one or more classes annotated with `@ServerEndpoint`.
-         *//*
-        serverEndpointExporter.setAnnotatedEndpointClasses(WebSocketController.class);
-
-        return serverEndpointExporter;
+    public CorsWebFilter corsWebFilter() {
+        return new CorsWebFilter(corsConfigurationSource());
     }
-    */
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration defaultCorsConfig = new CorsConfiguration();
+        defaultCorsConfig.addAllowedOrigin("http://localhost:3000");
+        defaultCorsConfig.addAllowedMethod("*");
+        defaultCorsConfig.addAllowedHeader("*");
+        defaultCorsConfig.setAllowCredentials(true);
+
+        Map<String, CorsConfiguration> corsConfigurationMap = new HashMap<>();
+        corsConfigurationMap.put("/subscribe/**", defaultCorsConfig);
+        // Add more specific configurations if needed
+
+        return exchange -> {
+            String path = exchange.getRequest().getURI().getPath();
+            // Find the first matching path in the map
+            for (String key : corsConfigurationMap.keySet()) {
+                if (path.matches(key.replace("/**", "(/|$)(.*)"))) {
+                    return corsConfigurationMap.get(key);
+                }
+            }
+            // Fallback to default configuration if no specific match is found
+            return defaultCorsConfig;
+        };
+    }
 }

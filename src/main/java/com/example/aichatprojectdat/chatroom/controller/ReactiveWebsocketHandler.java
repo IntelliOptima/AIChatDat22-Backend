@@ -36,34 +36,42 @@ public class ReactiveWebsocketHandler implements WebSocketHandler {
 
         return session.receive()
                 .map(WebSocketMessage::getPayloadAsText)
-                .flatMap(command -> {
-                    if ("subscribe".equals(command)) {
-                        // Process subscription and return a Mono
-                        return processSubscription(session, uriPath);
-                    } else {
-                        // Handle regular chat messages and return a Mono
-                        return handleEventEmitter(session, extractChatroomId(uriPath));
+                .flatMap(messageAsString -> {
+                    String[] splitMessage = messageAsString.split(":", 2);
+                    String messageType = splitMessage[0];
+                    String messageContent = splitMessage[1];
+
+                    switch (messageType) {
+                        case "SUBSCRIBE":
+                            return handleSubscription(session, messageContent, extractChatroomId(uriPath));
+                        case "MESSAGE":
+                            System.out.println(messageContent);
+                            return processMessage(messageContent, extractChatroomId(uriPath));
+                        default:
+                            return Mono.error(new RuntimeException("Unknown message type"));
                     }
                 })
-                .then(); // This ensures the completion of the pipeline
+                .then();
     }
 
     private Mono<Void> processSubscription(WebSocketSession session, String uriPath) {
+        System.out.println("Processing subscription");
         return extractUserId(session)
                 .flatMap(userId -> userId != null ?
                         handleSubscription(session, userId, extractChatroomId(uriPath)) :
                         Mono.empty());
     }
 
-    private Mono<Void> handleSubscription(WebSocketSession session, String userId, String chatroomId) {
+    private Mono<Void> handleSubscription(WebSocketSession session, String messageContent, String chatroomId) {
         log.info("Client subscribed to chatroom: {}", chatroomId);
         chatroomSinks.computeIfAbsent(chatroomId, id -> new ChatroomSink());
-        chatroomSinks.get(chatroomId).addSubscriber(userId, session);
+        chatroomSinks.get(chatroomId).addSubscriber(messageContent, session);
         return Mono.empty();
     }
 
 
     private Mono<Void> handleEventEmitter(WebSocketSession session, String chatroomId) {
+        System.out.println("Process Message");
         return session.receive()
                 .map(WebSocketMessage::getPayloadAsText)
                 .flatMap(message -> processMessage(message, chatroomId))
