@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class UtilityConfig {
 
-    @Bean
+    @Bean("jsonObjectMapperUtil")
     public ObjectMapper jsonObjectMapper() {
         return new ObjectMapper();
     }

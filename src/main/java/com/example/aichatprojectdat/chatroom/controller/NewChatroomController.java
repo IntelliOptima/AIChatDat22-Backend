@@ -216,26 +216,4 @@ public class NewChatroomController {
             return false;
         });
     }
-
-    public void handleClientDisconnect(String subscriberId) {
-        // Iterate over all chatrooms and remove the subscriber
-        chatroomSinks.forEach((chatroomId, chatroomSink) -> {
-            chatroomSink.removeSubscriber(subscriberId);
-        });
-    }
-
-    public void addSubscriberToChatroom(String chatroomId, String subscriberId) {
-        ChatroomSink chatroomSink = getOrCreateChatroomSink(chatroomId);
-        chatroomSink.addSubscriber(subscriberId);
-    }
-
-    public void removeSubscriberFromChatroom(String chatroomId, String subscriberId) {
-        ChatroomSink chatroomSink = chatroomSinks.get(chatroomId);
-        if (chatroomSink != null) {
-            chatroomSink.removeSubscriber(subscriberId);
-            if (chatroomSink.hasSubscribers()) {
-                chatroomSinks.remove(chatroomId); // Remove if no subscribers
-            }
-        }
-    }
 }
