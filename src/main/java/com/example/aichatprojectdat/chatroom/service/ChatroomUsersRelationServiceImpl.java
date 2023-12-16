@@ -1,7 +1,9 @@
 package com.example.aichatprojectdat.chatroom.service;
 
 import com.example.aichatprojectdat.chatroom.exception.NotFoundException;
+import com.example.aichatprojectdat.chatroom.exception.UserChatroomAdditionStatus;
 import com.example.aichatprojectdat.chatroom.model.ChatroomUsersRelation;
+import com.example.aichatprojectdat.chatroom.repository.ChatroomRepository;
 import com.example.aichatprojectdat.chatroom.repository.ChatroomUsersRelationRepository;
 import com.example.aichatprojectdat.user.model.User;
 import com.example.aichatprojectdat.user.repository.UserRepository;
@@ -13,6 +15,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.io.NotActiveException;
+import java.util.Arrays;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +25,7 @@ public class ChatroomUsersRelationServiceImpl implements IChatRoomUsersRelationS
 
     private final ChatroomUsersRelationRepository chatroomUsersRelationRepository;
     private final UserRepository userRepository;
+    private final ChatroomRepository chatroomRepository;
 
     @Override
     public Mono<ChatroomUsersRelation> create(ChatroomUsersRelation chatroomUsersRelation) {
@@ -39,15 +43,17 @@ public class ChatroomUsersRelationServiceImpl implements IChatRoomUsersRelationS
     }
 
     @Override
-    public Mono<ChatroomUsersRelation> addUserToChatroom(String chatroomId, String userEmailToAdd) {
-
-        return userRepository.findUserByEmail(userEmailToAdd)
-                .map(User::id)
-                .flatMap(userId -> chatroomUsersRelationRepository.findByUserIdAndChatroomId(userId, chatroomId)
-                        .switchIfEmpty(chatroomUsersRelationRepository
-                                .save(ChatroomUsersRelation.of(chatroomId, userId))))
-                .switchIfEmpty(Mono.error(new NotFoundException("User not found with email: " + userEmailToAdd)));
+    public Flux<ChatroomUsersRelation> addUserToChatroom(String chatroomId, String[] userEmailsToAdd) {
+        return Flux.fromArray(userEmailsToAdd)
+                .flatMap(email -> userRepository.findUserByEmail(email)
+                        .flatMap(user -> chatroomUsersRelationRepository.findByUserIdAndChatroomId(user.id(), chatroomId)
+                                .switchIfEmpty(chatroomUsersRelationRepository.save(ChatroomUsersRelation.of(chatroomId, user.id())))
+                        )
+                        .switchIfEmpty(Mono.error(new NotFoundException("User not found with email: " + email)))
+                );
     }
+
+
 
 
     @Override
@@ -57,9 +63,29 @@ public class ChatroomUsersRelationServiceImpl implements IChatRoomUsersRelationS
 
     @Override
     public Mono<Void> leaveChatroom(String chatroomId, Long userId) {
-        return chatroomUsersRelationRepository.findByUserIdAndChatroomId(userId, chatroomId)
+        Mono<Void> deleteRelation = chatroomUsersRelationRepository
+                .findByUserIdAndChatroomId(userId, chatroomId)
                 .flatMap(chatroomUsersRelationRepository::delete);
+
+        Mono<Boolean> checkForId2And1 = chatroomUsersRelationRepository
+                .findAllByChatroomId(chatroomId)
+                .map(ChatroomUsersRelation::userId)
+                .collectList()
+                .map(userIds -> userIds.stream().allMatch(id -> id.equals(1L) || id.equals(2L)));
+
+        Mono<Void> removeIds1And2 = checkForId2And1
+                .flatMap(shouldDelete -> shouldDelete ?
+                        chatroomUsersRelationRepository
+                                .deleteByUserIdInAndChatroomId(Arrays.asList(1L, 2L), chatroomId)
+                                .then() :
+                        Mono.empty());
+
+        return deleteRelation.then(checkForId2And1)
+                .flatMap(shouldDelete -> shouldDelete ?
+                        removeIds1And2.then(chatroomRepository.deleteById(chatroomId)) :
+                        Mono.empty());
     }
+
 
     @Override
     public Mono<Boolean> isUserPartOfChatroom(Long userId, String chatroomId) {
