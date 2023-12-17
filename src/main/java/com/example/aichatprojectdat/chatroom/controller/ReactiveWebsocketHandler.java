@@ -91,7 +91,8 @@ public class ReactiveWebsocketHandler implements WebSocketHandler {
                                                         return handleDallEMessage(extractChatroomId(uriPath), chunkDataList);
                                                     } else {
                                                         log.info("Handling regular message");
-                                                        return processRegularMessage(lastChunk.toString(), extractChatroomId(uriPath));
+                                                        return processRegularMessage(lastChunk, extractChatroomId(uriPath))
+                                                                .then();
                                                     }
                                                 })
 
@@ -244,22 +245,14 @@ public class ReactiveWebsocketHandler implements WebSocketHandler {
 
 
 
-    private Mono<Void> processRegularMessage(String messageAsString, String chatroomId) {
-        log.info("Regular message {}", messageAsString);
-        try {
-            ChunkData messageChunk = jsonMapper.readValue(messageAsString, ChunkData.class);
-            log.info("processMessage received: {} ", messageChunk.toString());
-
-            return messageService.create(messageChunk.chunk()) // Assuming messageService.create returns a Mono<Message>
-                    .flatMap(createdMessage -> {
-                        ChunkData chunkData = ChunkData.of(UUID.randomUUID().toString(), createdMessage, 1L, 1L, true);
-                        broadcastMessage(chunkData, chatroomId);
-                        return Mono.empty();
-                    }).then();
-
-        } catch (JsonProcessingException e) {
-            return Mono.error(new RuntimeException("Error processing message", e));
-        }
+    private Mono<Void> processRegularMessage(ChunkData messageChunk, String chatroomId) {
+        log.info("Message chunk to be processed {}", messageChunk);
+        return messageService.create(messageChunk.chunk()) // Assuming messageService.create returns a Mono<Message>
+                .flatMap(createdMessage -> {
+                    ChunkData chunkData = ChunkData.of(UUID.randomUUID().toString(), createdMessage, 1L, 1L, true);
+                    broadcastMessage(chunkData, chatroomId);
+                    return Mono.empty();
+                }).then();
     }
 
 
