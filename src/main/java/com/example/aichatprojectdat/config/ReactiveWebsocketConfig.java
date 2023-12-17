@@ -65,6 +65,7 @@ public class ReactiveWebsocketConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration defaultCorsConfig = new CorsConfiguration();
         defaultCorsConfig.addAllowedOrigin("http://localhost:3000");
+        defaultCorsConfig.addAllowedOrigin("https://ai-team-talk.vercel.app");
         defaultCorsConfig.addAllowedMethod("*");
         defaultCorsConfig.addAllowedHeader("*");
         defaultCorsConfig.setAllowCredentials(true);
