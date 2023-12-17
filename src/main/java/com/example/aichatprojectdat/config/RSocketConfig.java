@@ -12,21 +12,13 @@ import org.springframework.http.codec.json.Jackson2JsonEncoder;
 import org.springframework.messaging.rsocket.RSocketStrategies;
 import org.springframework.messaging.rsocket.annotation.support.RSocketMessageHandler;
 import org.springframework.util.MimeTypeUtils;
+import org.springframework.web.reactive.socket.server.upgrade.ReactorNettyRequestUpgradeStrategy;
 import org.springframework.web.util.pattern.PathPatternRouteMatcher;
 
 import java.util.Map;
 
 @Configuration
 public class RSocketConfig {
-
-    @Bean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper()
-                // Register any necessary modules
-                .registerModule(new JavaTimeModule())
-                // Configure as necessary
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    }
 
     @Bean
     public RSocketStrategies rSocketStrategies() {
@@ -39,7 +31,7 @@ public class RSocketConfig {
                 .build();
     }
 
-
+    ReactorNettyRequestUpgradeStrategy nety = new ReactorNettyRequestUpgradeStrategy();
     @Bean
     public RSocketMessageHandler messageHandler(RSocketStrategies socketStrategies) {
         RSocketMessageHandler handler = new RSocketMessageHandler();

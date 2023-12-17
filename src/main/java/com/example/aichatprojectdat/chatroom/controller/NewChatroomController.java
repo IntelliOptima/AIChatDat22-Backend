@@ -47,9 +47,7 @@ public class NewChatroomController {
     }
 
 
-
-    @MessageMapping("chat.{chatroomId}")
-    public Flux<ChunkData> handleMessages(@DestinationVariable String chatroomId, Flux<ChunkData> incomingChunkData) {
+    public Flux<ChunkData> handleMessages(String chatroomId, Flux<ChunkData> incomingChunkData) {
         ChatroomSink chatroomSinkWrapper = getOrCreateChatroomSink(chatroomId);
         Sinks.Many<ChunkData> chatroomSink = chatroomSinkWrapper.getSink();
         log.info("User connected to chatroom {}", chatroomId);
@@ -197,7 +195,11 @@ public class NewChatroomController {
     }
 
     private boolean isLastChunkReceived(List<ChunkData> chunkDataList) {
-        return chunkDataList.stream().anyMatch(ChunkData::isLastChunk);
+        if (chunkDataList.size() == chunkDataList.get(0).totalChunks()) {
+            return chunkDataList.stream().anyMatch(ChunkData::isLastChunk);
+        } else {
+            return false;
+        }
     }
 
 
@@ -215,27 +217,5 @@ public class NewChatroomController {
             }
             return false;
         });
-    }
-
-    public void handleClientDisconnect(String subscriberId) {
-        // Iterate over all chatrooms and remove the subscriber
-        chatroomSinks.forEach((chatroomId, chatroomSink) -> {
-            chatroomSink.removeSubscriber(subscriberId);
-        });
-    }
-
-    public void addSubscriberToChatroom(String chatroomId, String subscriberId) {
-        ChatroomSink chatroomSink = getOrCreateChatroomSink(chatroomId);
-        chatroomSink.addSubscriber(subscriberId);
-    }
-
-    public void removeSubscriberFromChatroom(String chatroomId, String subscriberId) {
-        ChatroomSink chatroomSink = chatroomSinks.get(chatroomId);
-        if (chatroomSink != null) {
-            chatroomSink.removeSubscriber(subscriberId);
-            if (chatroomSink.hasSubscribers()) {
-                chatroomSinks.remove(chatroomId); // Remove if no subscribers
-            }
-        }
     }
 }

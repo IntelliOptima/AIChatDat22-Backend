@@ -10,22 +10,24 @@ CREATE TABLE user
     version                     INT
 );
 
-CREATE TABLE chatroom (
-  id                            VARCHAR(36) NOT NULL PRIMARY KEY,
-  chatroom_user_creator_id      BIGINT,
-  chatroom_name                 TEXT,
-  color                         VARCHAR(255),
-  created_date                  TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
-  last_modified_date            TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
-  version                       INT,
+CREATE TABLE chatroom
+(
+    id                            VARCHAR(36) NOT NULL PRIMARY KEY,
+    chatroom_user_creator_id      BIGINT,
+    chatroom_name                 TEXT,
+    color                         VARCHAR(255),
+    created_date                  TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
+    last_modified_date            TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
+    version                       INT,
 
     CONSTRAINT fk_ChatroomUser
-    FOREIGN KEY (chatroom_user_creator_id)
-    REFERENCES user (id)
+        FOREIGN KEY (chatroom_user_creator_id)
+        REFERENCES user (id)
 );
 
 
-CREATE TABLE chatroom_users_relation (
+CREATE TABLE chatroom_users_relation
+(
     id                          BIGINT AUTO_INCREMENT PRIMARY KEY,
     chatroom_id                 VARCHAR(36) NOT NULL,
     user_id                     BIGINT,
@@ -39,36 +41,68 @@ CREATE TABLE chatroom_users_relation (
 
     CONSTRAINT fk_ChatroomUserRelation
         FOREIGN KEY (user_id)
-        REFERENCES user (id)
+         REFERENCES user (id)
 );
 
 
-CREATE TABLE message (
-  id                            VARCHAR(36) NOT NULL PRIMARY KEY,
-  user_id                       BIGINT,
-  text_message                  TEXT NOT NULL,
-  chatroom_id                   VARCHAR(36) NOT NULL,
-  created_date                  TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
-  last_modified_date            TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
-  version                       INT,
+CREATE TABLE message
+(
+    id                            VARCHAR(36) NOT NULL PRIMARY KEY,
+    user_id                       BIGINT,
+    text_message                  TEXT NOT NULL,
+    chatroom_id                   VARCHAR(36) NOT NULL,
+    created_date                  TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
+    last_modified_date            TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
+    version                       INT,
 
     CONSTRAINT fk_UserMessage
-      FOREIGN KEY (user_id)
-      REFERENCES user (id),
+        FOREIGN KEY (user_id)
+        REFERENCES user (id),
 
     CONSTRAINT fk_ChatroomMessage
         FOREIGN KEY (chatroom_id)
         REFERENCES chatroom (id)
 );
 
-CREATE TABLE read_receipt (
-  message_id       VARCHAR(36) NOT NULL,
-  user_id          BIGINT NOT NULL,
-  has_read         BOOLEAN NOT NULL,
+CREATE TABLE read_receipt
+(
+    message_id       VARCHAR(36) NOT NULL,
+    user_id          BIGINT NOT NULL,
+    has_read         BOOLEAN NOT NULL,
 
-  PRIMARY KEY (message_id, user_id),
-  FOREIGN KEY (message_id) REFERENCES message (id),
-  FOREIGN KEY (user_id) REFERENCES user (id)
+    PRIMARY KEY (message_id, user_id),
+        FOREIGN KEY (message_id) REFERENCES message (id),
+        FOREIGN KEY (user_id) REFERENCES user (id)
 );
 
 
+
+CREATE TABLE user_relation
+(
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id         BIGINT,
+    friend_id       BIGINT,
+
+    CONSTRAINT fk_UserUserRelation
+       FOREIGN KEY (user_id)
+           REFERENCES user (id),
+
+    CONSTRAINT fk_FriendUserRelation
+       FOREIGN KEY (user_id)
+           REFERENCES user (id)
+);
+
+CREATE TABLE pending_relation_request
+(
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY,
+    requester_id    BIGINT,
+    receiver_id     BIGINT,
+
+    CONSTRAINT fk_RequesterPending
+      FOREIGN KEY (requester_id)
+          REFERENCES user (id),
+
+    CONSTRAINT fk_ReceiverPending
+      FOREIGN KEY (receiver_id)
+          REFERENCES user (id)
+)

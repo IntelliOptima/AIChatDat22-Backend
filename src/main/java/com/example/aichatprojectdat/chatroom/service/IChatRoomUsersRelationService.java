@@ -14,7 +14,7 @@ public interface IChatRoomUsersRelationService {
 
     Mono<Boolean> isUserPartOfChatroom(Long userId, String chatroomId);
 
-    Mono<ChatroomUsersRelation> addUserToChatroom(String chatroomId, String userEmailToAdd);
+    Flux<ChatroomUsersRelation> addUserToChatroom(String chatroomId, String[] userEmailsToAdd);
 
     Mono<Void> delete(ChatroomUsersRelation chatroomUsersRelation);
 
