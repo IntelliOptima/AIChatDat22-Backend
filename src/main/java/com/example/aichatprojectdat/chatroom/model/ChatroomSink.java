@@ -23,6 +23,7 @@ public class ChatroomSink {
     public void removeSubscriber(String subscriberId, WebSocketSession session) {
         subscribers.remove(subscriberId);
         webSockets.remove(session);
+        session.close().subscribe();
     }
 
     public boolean hasSubscribers() {
