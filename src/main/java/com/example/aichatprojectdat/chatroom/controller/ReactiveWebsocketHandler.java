@@ -7,6 +7,7 @@ import com.example.aichatprojectdat.chatroom.model.ChatroomSink;
 import com.example.aichatprojectdat.message.model.ChunkData;
 import com.example.aichatprojectdat.message.model.Message;
 import com.example.aichatprojectdat.message.service.IMessageService;
+import com.example.aichatprojectdat.utilities.ReactiveWebsocketMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -23,10 +24,7 @@ import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Schedulers;
 
 import java.time.Instant;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -38,24 +36,25 @@ public class ReactiveWebsocketHandler implements WebSocketHandler {
     private final IGPT3Service gpt3Service;
     private final IGPT4Service gpt4Service;
     private final IDALL_E3ServiceStandard iDallE3ServiceStandard;
-    @Qualifier(value = "jsonObjectMapperUtil")
+    private final ReactiveWebsocketMethods reactiveWebsocketMethods;
     private final ObjectMapper jsonMapper;
     private final Map<String, ChatroomSink> chatroomSinks = new ConcurrentHashMap<>();
+    private final Map<String, List<ChunkData>> chunkStream = new ConcurrentHashMap<>();
 
     public ReactiveWebsocketHandler (
             @Qualifier("jsonObjectMapperUtil") ObjectMapper objectMapper,
             IMessageService messageService,
             IGPT3Service gpt3Service,
             IGPT4Service gpt4Service,
-            IDALL_E3ServiceStandard idallE3ServiceStandard) {
+            IDALL_E3ServiceStandard idallE3ServiceStandard,
+            ReactiveWebsocketMethods reactiveWebsocketMethods) {
         this.messageService =messageService;
         this.gpt3Service = gpt3Service;
         this.gpt4Service = gpt4Service;
         this.iDallE3ServiceStandard = idallE3ServiceStandard;
         this.jsonMapper = objectMapper;
+        this.reactiveWebsocketMethods = reactiveWebsocketMethods;
     }
-
-
     @Override
     public @NotNull Mono<Void> handle(WebSocketSession session) {
         String uriPath = session.getHandshakeInfo().getUri().getPath();
@@ -65,129 +64,109 @@ public class ReactiveWebsocketHandler implements WebSocketHandler {
                 .flatMap(messageAsString -> {
                     String[] splitMessage = messageAsString.split(":", 2);
                     String messageType = splitMessage[0];
-                    String payload = splitMessage.length > 1 ? splitMessage[1] : ""; // will be the main object from client either userId or message...
+                    String payload = splitMessage.length > 1 ? splitMessage[1] : "";
 
                     System.out.println("THIS IS PAYLOAD: " + payload);
                     System.out.println("This is size of chatroomSinks: " + chatroomSinks.size());
 
                     return switch (messageType) {
                         case "SUBSCRIBE" ->
-                                handleSubscription(session, payload, extractChatroomId(uriPath));
-                        case "MESSAGE" -> Flux.from(Flux.just(convertToChunkData(payload)))
-                                .groupBy(ChunkData::identifier)
-                                .flatMap(groupedFlux ->
-                                        groupedFlux.collectList()
-                                                .flatMapMany(chunkDataList -> {
+                                handleSubscription(session, payload, reactiveWebsocketMethods.extractChatroomId(uriPath));
+                        case "MESSAGE" -> Mono.defer(() -> {
+                            ChunkData chunk = reactiveWebsocketMethods.convertToChunkData(payload);
 
-                                                    if (chunkDataList.isEmpty()) {
-                                                        log.warn("Received empty chunk data list");
-                                                        return Flux.empty();
-                                                    }
+                            // Store chunk in temporary storage
+                            chunkStream.computeIfAbsent(chunk.identifier(), k -> new ArrayList<>()).add(chunk);
 
-                                                    chunkDataList.sort(Comparator.comparing(ChunkData::startIndex));
-                                                    ChunkData lastChunk = chunkDataList.get(chunkDataList.size() - 1);
-
-
-                                                    if (isGptMessage(chunkDataList) && isLastChunkReceived(chunkDataList)) {
-                                                        return handleGptContextMessage(extractChatroomId(uriPath), chunkDataList);
-                                                    } else if (isDalleMessage(chunkDataList)) {
-                                                        return handleDallEMessage(extractChatroomId(uriPath), chunkDataList);
-                                                    } else {
-                                                        log.info("Handling regular message");
-                                                        return processRegularMessage(lastChunk, extractChatroomId(uriPath))
-                                                                .then();
-                                                    }
-                                                })
-
-                                );
+                            // Check if all chunks for this identifier have been received
+                            if (reactiveWebsocketMethods.isCompleteMessage(chunk.identifier(), chunkStream)) {
+                                List<ChunkData> completeChunks = chunkStream.remove(chunk.identifier());
+                                return processCompleteMessage(completeChunks, reactiveWebsocketMethods.extractChatroomId(uriPath));
+                            }
+                            return Mono.empty();
+                        });
                         case "CLOSE" ->
-                                handleUnsubscription(session, payload, extractChatroomId(uriPath));
+                                handleUnsubscription(session, payload, reactiveWebsocketMethods.extractChatroomId(uriPath));
                         default -> Mono.error(new RuntimeException("Unknown message type"));
                     };
-                }).then();
+                })
+                .then();
     }
 
 
-    private Mono<Void> handleUnsubscription(WebSocketSession session, String userId, String chatroomId) {
-        chatroomSinks.get(chatroomId).removeSubscriber(userId, session);
-        System.out.println("This is amount of subscriber for given chatroomSink: " +
-                chatroomSinks.get(chatroomId).getSubscribers().size());
+    private Mono<Void> processCompleteMessage(List<ChunkData> chunks, String chatroomId) {
+        // Sort the chunks by startIndex to ensure they are in the correct order
+        List<ChunkData> sortedChunks = chunks.stream()
+                .sorted(Comparator.comparing(ChunkData::startIndex))
+                .toList();
 
-        if (!chatroomSinks.get(chatroomId).hasSubscribers()) {
-            chatroomSinks.remove(chatroomId);
+        if (reactiveWebsocketMethods.isGptMessage(sortedChunks) && reactiveWebsocketMethods.isLastChunkReceived(sortedChunks)) {
+            log.info("Handling GPT message!");
+             return handleGptContextMessage(chatroomId, sortedChunks);
+        } else if (reactiveWebsocketMethods.isDalleMessage(sortedChunks)) {
+            return handleDallEMessage(chatroomId, sortedChunks);
+        } else {
+            log.info("Handling regular message: " + sortedChunks.get(0));
+            return processRegularMessage(sortedChunks.get(0), chatroomId);
         }
-        return Mono.empty();
     }
 
 
-    private Flux<ChunkData> handleGptContextMessage(String chatroomId, List<ChunkData> chunkDataList) {
+    private Mono<Void> handleGptContextMessage(String chatroomId, List<ChunkData> chunkDataList) {
         List<Message> messages = chunkDataList.stream()
                 .map(ChunkData::chunk)
                 .collect(Collectors.toList());
 
-        log.info("The size of messages is {}", messages.size());
-
         // Extract the original message
         Message originalMessage = chunkDataList.get(chunkDataList.size() - 1).chunk();
-        Instant originalMessageCreated = Instant.now();
-        originalMessage.setCreatedDate(originalMessageCreated);
-        originalMessage.setLastModifiedDate(originalMessageCreated);
-
-        log.info("Processing original message: {} ", originalMessage);
+        Instant now = Instant.now();
+        originalMessage.setCreatedDate(now);
+        originalMessage.setLastModifiedDate(now);
 
         String gptMessageId = UUID.randomUUID().toString();
-        Instant createdDate = Instant.now();
         StringBuilder gptAnswer = new StringBuilder();
 
-        // Save and then emit the original message
-        return messageService.create(originalMessage)
-                .thenMany(Flux.just(ChunkData.of(
-                        UUID.randomUUID().toString(),
-                        originalMessage,
-                        1L,
-                        null,
-                        true)))
-                .concatWith(
-                        gpt3Service.streamChatContext(messages)
-                                .flatMap(chunk -> {
-                                    gptAnswer.append(chunk);
-                                    Message newMessage = Message.builder()
-                                            .id(gptMessageId)
-                                            .userId(1L)
-                                            .textMessage(chunk)
-                                            .chatroomId(chatroomId)
-                                            .createdDate(Instant.now())
-                                            .build();
+        // Process the original message
+        Mono<Void> processOriginal = processRegularMessage(ChunkData.of(UUID.randomUUID().toString(), originalMessage, 0L, 1L, true), chatroomId);
 
-                                    ChunkData newChunk = ChunkData.of(UUID.randomUUID().toString(),
-                                            newMessage,
-                                            (long) chunk.length(),
-                                            null,
-                                            false);
+        // Stream for processing GPT-3 responses
+        Flux<ChunkData> gptResponseStream = gpt3Service.streamChatContext(messages)
+                .map(chunk -> {
+                    gptAnswer.append(chunk);
+                    Message newMessage = Message.builder()
+                            .id(gptMessageId)
+                            .userId(1L)
+                            .textMessage(chunk)
+                            .chatroomId(chatroomId)
+                            .createdDate(Instant.now())
+                            .build();
 
-                                    broadcastMessage(newChunk, chatroomId);
+                    ChunkData newChunk = ChunkData.of(gptMessageId, newMessage, (long) chunk.length(), null, false);
+                    broadcastMessage(newChunk, chatroomId);
 
-                                    // Instead of Mono.empty(), return Mono.just(newChunk)
-                                    return Mono.just(newChunk);
-                                }))
+                    return newChunk;
+                });
+
+        return processOriginal
+                .thenMany(gptResponseStream)
                 .publishOn(Schedulers.boundedElastic())
                 .doOnComplete(() -> {
-                    // Save the complete message to the database after all chunks are processed
                     Message completeMessage = Message.builder()
                             .id(gptMessageId)
                             .userId(1L)
                             .textMessage(gptAnswer.toString())
                             .chatroomId(chatroomId)
-                            .createdDate(createdDate)
+                            .createdDate(now)
                             .build();
 
                     messageService.create(completeMessage).subscribe();
-                });
+                })
+                .then();
     }
 
 
 
-    private Flux<ChunkData> handleDallEMessage(String chatroomId, List<ChunkData> chunkData) {
+    private Mono<Void> handleDallEMessage(String chatroomId, List<ChunkData> chunkData) {
         // Logic to handle Dall-E message
         String dalleCommand = chunkData.get(0).chunk().getTextMessage().split("@dalle ")[1];
         String chunkDataIdentifier = UUID.randomUUID().toString();
@@ -217,40 +196,8 @@ public class ReactiveWebsocketHandler implements WebSocketHandler {
                                 broadcastMessage(dalleChunkData, message.getChatroomId());
                                 return Mono.empty();
                             });
-                });
+                }).then();
     }
-
-
-    private boolean isGptMessage(List<ChunkData> chunkDataList) {
-        log.info(chunkDataList.toString());
-        Message chunk = chunkDataList.get(chunkDataList.size() - 1).chunk();
-        return chunk != null && chunk.getTextMessage().toLowerCase().startsWith("@gpt");
-    }
-
-    private boolean isDalleMessage(List<ChunkData> chunkDataList) {
-        log.info(chunkDataList.toString());
-        Message chunk = chunkDataList.get(chunkDataList.size() - 1).chunk();
-        return chunk != null && chunk.getTextMessage().toLowerCase().startsWith("@dalle");
-    }
-
-    private boolean isLastChunkReceived(List<ChunkData> chunkDataList) {
-        if (chunkDataList.size() == chunkDataList.get(0).totalChunks()) {
-            return chunkDataList.stream().anyMatch(ChunkData::isLastChunk);
-        } else {
-            return false;
-        }
-    }
-
-    private ChunkData convertToChunkData(String messageContent) {
-        try {
-            log.info("processMessage received: {} ", messageContent);
-            return jsonMapper.readValue(messageContent, ChunkData.class);
-        } catch (JsonProcessingException e) {
-            return ChunkData.empty();
-        }
-    }
-
-
 
 
     private Mono<Void> processRegularMessage(ChunkData messageChunk, String chatroomId) {
@@ -271,6 +218,18 @@ public class ReactiveWebsocketHandler implements WebSocketHandler {
         return Mono.empty();
     }
 
+
+    private Mono<Void> handleUnsubscription(WebSocketSession session, String userId, String chatroomId) {
+        chatroomSinks.get(chatroomId).removeSubscriber(userId, session);
+        System.out.println("This is amount of subscriber for given chatroomSink: " +
+                chatroomSinks.get(chatroomId).getSubscribers().size());
+
+        if (!chatroomSinks.get(chatroomId).hasSubscribers()) {
+            chatroomSinks.remove(chatroomId);
+        }
+        return Mono.empty();
+    }
+
     private void broadcastMessage(ChunkData chunkData, String chatroomId) {
         chatroomSinks.get(chatroomId).getWebSockets()
                 .forEach(session -> {
@@ -285,24 +244,5 @@ public class ReactiveWebsocketHandler implements WebSocketHandler {
                 });
     }
 
-    private Mono<String> extractUserId(WebSocketSession session) {
-        return session.receive()
-                .map(WebSocketMessage::getPayloadAsText)
-                .next() // Assuming you are interested in the first message only
-                .flatMap(userId -> {
 
-                    try {
-                        return Mono.just(jsonMapper.readValue(userId, String.class));
-                    } catch (JsonProcessingException e) {
-                        log.info(e.toString());
-                        return Mono.empty(); // or Mono.error(e);
-                    }
-                });
-    }
-
-
-    private String extractChatroomId(String uriPath) {
-        // Extract the chatroomId from the URI path
-        return uriPath.substring(uriPath.lastIndexOf('/') + 1);
-    }
 }
