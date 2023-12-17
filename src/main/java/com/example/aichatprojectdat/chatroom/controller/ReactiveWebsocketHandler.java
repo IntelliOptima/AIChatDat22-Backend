@@ -65,17 +65,19 @@ public class ReactiveWebsocketHandler implements WebSocketHandler {
                 .flatMap(messageAsString -> {
                     String[] splitMessage = messageAsString.split(":", 2);
                     String messageType = splitMessage[0];
-                    String userIdOrMessageContent = splitMessage.length > 1 ? splitMessage[1] : "";
-                    System.out.println(userIdOrMessageContent);
+                    String payload = splitMessage.length > 1 ? splitMessage[1] : ""; // will be the main object from client either userId or message...
+
+                    System.out.println("THIS IS PAYLOAD: " + payload);
 
                     return switch (messageType) {
                         case "SUBSCRIBE" ->
-                                handleSubscription(session, userIdOrMessageContent, extractChatroomId(uriPath));
-                        case "MESSAGE" -> Flux.from(Flux.just(convertToChunkData(userIdOrMessageContent)))
+                                handleSubscription(session, payload, extractChatroomId(uriPath));
+                        case "MESSAGE" -> Flux.from(Flux.just(convertToChunkData(payload)))
                                 .groupBy(ChunkData::identifier)
                                 .flatMap(groupedFlux ->
                                         groupedFlux.collectList()
                                                 .flatMapMany(chunkDataList -> {
+
                                                     if (chunkDataList.isEmpty()) {
                                                         log.warn("Received empty chunk data list");
                                                         return Flux.empty();
@@ -98,7 +100,7 @@ public class ReactiveWebsocketHandler implements WebSocketHandler {
 
                                 );
                         case "CLOSE" ->
-                                handleUnsubscription(session, userIdOrMessageContent, extractChatroomId(uriPath));
+                                handleUnsubscription(session, payload, extractChatroomId(uriPath));
                         default -> Mono.error(new RuntimeException("Unknown message type"));
                     };
                 }).then();
@@ -107,9 +109,9 @@ public class ReactiveWebsocketHandler implements WebSocketHandler {
 
     private Mono<Void> handleUnsubscription(WebSocketSession session, String userId, String chatroomId) {
         chatroomSinks.get(chatroomId).removeSubscriber(userId, session);
+        System.out.println("CHATROOMSINKS SIZE: " + chatroomSinks.size());
         return Mono.empty();
     }
-
 
 
     private Flux<ChunkData> handleGptContextMessage(String chatroomId, List<ChunkData> chunkDataList) {
@@ -233,7 +235,7 @@ public class ReactiveWebsocketHandler implements WebSocketHandler {
         }
     }
 
-    public ChunkData convertToChunkData(String messageContent) {
+    private ChunkData convertToChunkData(String messageContent) {
         try {
             log.info("processMessage received: {} ", messageContent);
             return jsonMapper.readValue(messageContent, ChunkData.class);
@@ -264,7 +266,6 @@ public class ReactiveWebsocketHandler implements WebSocketHandler {
     }
 
     private void broadcastMessage(ChunkData chunkData, String chatroomId) {
-        log.info("Emitting Message! ");
         chatroomSinks.get(chatroomId).getWebSockets()
                 .forEach(session -> {
                     try {
