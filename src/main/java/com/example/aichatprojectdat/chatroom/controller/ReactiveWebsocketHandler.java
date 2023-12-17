@@ -68,6 +68,7 @@ public class ReactiveWebsocketHandler implements WebSocketHandler {
                     String payload = splitMessage.length > 1 ? splitMessage[1] : ""; // will be the main object from client either userId or message...
 
                     System.out.println("THIS IS PAYLOAD: " + payload);
+                    System.out.println("This is size of chatroomSinks: " + chatroomSinks.size());
 
                     return switch (messageType) {
                         case "SUBSCRIBE" ->
@@ -109,7 +110,12 @@ public class ReactiveWebsocketHandler implements WebSocketHandler {
 
     private Mono<Void> handleUnsubscription(WebSocketSession session, String userId, String chatroomId) {
         chatroomSinks.get(chatroomId).removeSubscriber(userId, session);
-        System.out.println("CHATROOMSINKS SIZE: " + chatroomSinks.size());
+        System.out.println("This is amount of subscriber for given chatroomSink: " +
+                chatroomSinks.get(chatroomId).getSubscribers().size());
+
+        if (!chatroomSinks.get(chatroomId).hasSubscribers()) {
+            chatroomSinks.remove(chatroomId);
+        }
         return Mono.empty();
     }
 
