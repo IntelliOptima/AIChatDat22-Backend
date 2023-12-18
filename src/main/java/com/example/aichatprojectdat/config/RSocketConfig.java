@@ -31,7 +31,6 @@ public class RSocketConfig {
                 .build();
     }
 
-    ReactorNettyRequestUpgradeStrategy nety = new ReactorNettyRequestUpgradeStrategy();
     @Bean
     public RSocketMessageHandler messageHandler(RSocketStrategies socketStrategies) {
         RSocketMessageHandler handler = new RSocketMessageHandler();

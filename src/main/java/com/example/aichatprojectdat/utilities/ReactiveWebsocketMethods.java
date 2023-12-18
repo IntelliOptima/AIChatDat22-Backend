@@ -15,14 +15,6 @@ import java.util.Map;
 @Component
 public class ReactiveWebsocketMethods {
 
-    private final ObjectMapper jsonMapper;
-
-    public ReactiveWebsocketMethods(@Qualifier("jsonObjectMapperUtil") ObjectMapper objectMapper) {
-        this.jsonMapper = objectMapper;
-    }
-
-
-
     public boolean isCompleteMessage(String identifier, Map<String, List<ChunkData>> chunkStream ) {
         List<ChunkData> chunks = chunkStream.get(identifier);
         if (chunks == null || chunks.isEmpty()) {
@@ -52,21 +44,6 @@ public class ReactiveWebsocketMethods {
         } else {
             return false;
         }
-    }
-
-    public ChunkData convertToChunkData(String messageContent) {
-        try {
-            log.info("processMessage received: {} ", messageContent);
-            return jsonMapper.readValue(messageContent, ChunkData.class);
-        } catch (JsonProcessingException e) {
-            return ChunkData.empty();
-        }
-    }
-
-
-    public String extractChatroomId(String uriPath) {
-        // Extract the chatroomId from the URI path
-        return uriPath.substring(uriPath.lastIndexOf('/') + 1);
     }
 
 

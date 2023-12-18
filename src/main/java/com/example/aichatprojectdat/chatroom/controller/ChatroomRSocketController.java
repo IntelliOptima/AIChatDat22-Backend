@@ -10,6 +10,7 @@ import com.example.aichatprojectdat.OpenAIModels.dall_e.model.generation.ImageGe
 import com.example.aichatprojectdat.OpenAIModels.dall_e.service.IDALL_E3ServiceStandard;
 import com.example.aichatprojectdat.OpenAIModels.gpt.service.interfaces.IGPT3Service;
 import com.example.aichatprojectdat.OpenAIModels.gpt.service.interfaces.IGPT4Service;
+import com.example.aichatprojectdat.message.model.ChunkData;
 import com.example.aichatprojectdat.message.model.Message;
 import com.example.aichatprojectdat.message.model.ReadReceipt;
 import com.example.aichatprojectdat.message.service.IReadReceiptService;
@@ -41,7 +42,7 @@ public class ChatroomRSocketController {
     private final IDALL_E3ServiceStandard iDallE3ServiceStandard;
 
     private final Map<String, Sinks.Many<Message>> chatroomSinks = new ConcurrentHashMap<>();
-
+    private final Map<String, List<ChunkData>> chunkStream = new ConcurrentHashMap<>();
 
     // Map to keep track of connected users in each chatroom
     private final Map<String, Set<Long>> onlineUsers = new ConcurrentHashMap<>();
@@ -52,6 +53,7 @@ public class ChatroomRSocketController {
     //_______________________ RSOCKET -> CHANNEL _______________________________
 
     // Method for clients to connect and stream chatroom messages
+
     @MessageMapping("chat.stream.{chatroomId}")
     public Flux<Message> streamMessages(
             @DestinationVariable String chatroomId,
@@ -64,9 +66,7 @@ public class ChatroomRSocketController {
     }
 
     private void handleClientDisconnection(String chatroomId) {
-
         log.info("Client disconnected from chatroom:     " + chatroomId);
-
     }
 
     @MessageMapping("chat.online.{chatroomId}")
@@ -152,50 +152,6 @@ public class ChatroomRSocketController {
 
         log.info("Emitting message {}", chatMessage);
     }
-
-
-    public void handleGptMessage(Message chatMessage, Sinks.Many<Message> sink) {
-        StringBuilder gptAnswer = new StringBuilder();
-
-        String gptMessageId = UUID.randomUUID().toString();
-        Instant createdDate = Instant.now();
-
-        gpt3Service.streamChat(chatMessage.getTextMessage().split("@gpt ")[1])
-                .doOnNext(chunk -> {
-                    String updatedContent = gptAnswer.append(chunk).toString();
-                    sink.emitNext(Message.builder()
-                                    .id(gptMessageId)
-                                    .userId(1L)
-                                    .textMessage(updatedContent)
-                                    .chatroomId(chatMessage.getChatroomId())
-                                    .createdDate(createdDate)
-                                    .build(), Sinks.EmitFailureHandler.FAIL_FAST);
-                })
-                .doOnError(e -> log.error("Error in GPT streaming: {}", e.getMessage()))
-                .publishOn(Schedulers.boundedElastic())
-                .doFinally(signalType -> {
-                    sink.emitNext(Message.builder()
-                                    .id(gptMessageId)
-                                    .userId(1L)
-                                    .textMessage("Gpt Finished message")
-                                    .chatroomId(chatMessage.getChatroomId())
-                                    .createdDate(createdDate)
-                                    .build(), Sinks.EmitFailureHandler.FAIL_FAST);
-
-
-                    Message gptCompleteMessage = Message.builder()
-                            .id(gptMessageId)
-                            .userId(1L)
-                            .textMessage(gptAnswer.toString())
-                            .chatroomId(chatMessage.getChatroomId())
-                            .createdDate(createdDate)
-                            .build();
-
-                    messageService.create(gptCompleteMessage).subscribe();
-                    gptAnswer.setLength(0);
-                }).subscribe();
-    }
-
 
     public void handleGptContextMessage(List<Message> messages, Sinks.Many<Message> sink) {
         log.info("IM RUNNING CONTEXT!");
