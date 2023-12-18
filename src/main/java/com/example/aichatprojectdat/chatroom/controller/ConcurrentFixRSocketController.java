@@ -125,14 +125,9 @@ public class ConcurrentFixRSocketController {
                 .map(ChunkData::chunk)
                 .collect(Collectors.toList());
 
-        Message originalMessage = chunkDataList.get(chunkDataList.size() - 1).chunk();
-        Instant now = Instant.now();
-        originalMessage.setCreatedDate(now);
-        originalMessage.setLastModifiedDate(now);
-
         String gptMessageId = UUID.randomUUID().toString();
         StringBuilder gptAnswer = new StringBuilder();
-        Instant gptCreatedAnswer = now.plusSeconds(5);
+        Instant gptCreatedAnswer = Instant.now().plusSeconds(5);
 
         Flux<ChunkData> gptResponseStream = gpt3Service.streamChatContext(messages)
                 .map(chunk -> {
@@ -203,42 +198,26 @@ public class ConcurrentFixRSocketController {
 
     public Mono<Void> emitReceivedMessage(Message chatMessage, Sinks.Many<ChunkData> sink) {
 
+        Instant createdDate = Instant.now();
         Message receivedMessage = Message.builder()
                 .id(chatMessage.getId())
                 .userId(chatMessage.getUserId())
                 .textMessage(chatMessage.getTextMessage())
+                .createdDate(createdDate)
+                .readReceipt(Map.of(chatMessage.getUserId(), true))
+                .lastModifiedDate(createdDate)
                 .chatroomId(chatMessage.getChatroomId())
                 .build();
 
-        messageService.create(receivedMessage)
+        ChunkData messageChunkData = ChunkData.of(UUID.randomUUID().toString(), receivedMessage, 0L, 1L, true);
+        sink.emitNext(messageChunkData, Sinks.EmitFailureHandler.FAIL_FAST);
+
+        return messageService.create(receivedMessage)
                 .flatMap(savedMessage -> {
                     ReadReceipt newMessageReceipt = ReadReceipt.of(savedMessage.getId(), savedMessage.getUserId(), true);
                     return readReceiptService.createReadReceipt(newMessageReceipt)
                             .thenReturn(savedMessage); // Chain read receipt creation in the reactive flow
-                })
-                .subscribe(savedMessage -> {
-                    log.info("Read receipt created for message {}", savedMessage);
-
-                    Message messageWithReceipt = Message.builder()
-                            .id(savedMessage.getId())
-                            .userId(savedMessage.getUserId())
-                            .textMessage(savedMessage.getTextMessage())
-                            .chatroomId(savedMessage.getChatroomId())
-                            .readReceipt(Map.of(savedMessage.getUserId(), true))
-                            .createdDate(savedMessage.getCreatedDate())
-                            .lastModifiedDate(savedMessage.getLastModifiedDate())
-                            .version(savedMessage.getVersion())
-                            .build();
-
-                    ChunkData messageChunkData = ChunkData.of(UUID.randomUUID().toString(), messageWithReceipt, 0L, 1L, true);
-
-                    sink.emitNext(messageChunkData, Sinks.EmitFailureHandler.FAIL_FAST);
-                }, error -> {
-                    log.error("Error creating read receipt", error);
-                });
-
-        log.info("Emitting message {}", chatMessage);
-        return Mono.empty();
+                }).then();
     }
 
 }
