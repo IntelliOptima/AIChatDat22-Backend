@@ -106,9 +106,14 @@ public class ConcurrentFixRSocketController {
 
         if (utilityMethods.isGptMessage(sortedChunks) && utilityMethods.isLastChunkReceived(sortedChunks)) {
             log.info("Handling GPT message!");
-            return handleGptContextMessage(chatroomId, sortedChunks, sink);
+
+            return processRegularMessage(sortedChunks.get(sortedChunks.size() - 1), sink)
+                    .then(Mono.defer(() -> handleGptContextMessage(chatroomId, sortedChunks, sink)));
+
         } else if (utilityMethods.isDalleMessage(sortedChunks)) {
-            return handleDallEMessage(sortedChunks.get(0).chunk(), sink);
+
+            return processRegularMessage(sortedChunks.get(sortedChunks.size() - 1), sink)
+                    .then(Mono.defer(() -> handleDallEMessage(sortedChunks.get(0).chunk(), sink)));
         } else {
             log.info("Handling regular message: " + sortedChunks.get(0));
             return processRegularMessage(sortedChunks.get(0), sink);
@@ -128,8 +133,6 @@ public class ConcurrentFixRSocketController {
         String gptMessageId = UUID.randomUUID().toString();
         StringBuilder gptAnswer = new StringBuilder();
         Instant gptCreatedAnswer = now.plusSeconds(5);
-
-        processRegularMessage(ChunkData.of(UUID.randomUUID().toString(), originalMessage, 0L, 1L, true), sink).subscribe();
 
         Flux<ChunkData> gptResponseStream = gpt3Service.streamChatContext(messages)
                 .map(chunk -> {
