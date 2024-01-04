@@ -3,6 +3,7 @@ package com.example.aichatprojectdat.config;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import io.rsocket.core.Resume;
 import io.rsocket.frame.decoder.PayloadDecoder;
 import org.springframework.boot.rsocket.server.RSocketServerCustomizer;
 import org.springframework.context.annotation.Bean;
@@ -15,6 +16,7 @@ import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.reactive.socket.server.upgrade.ReactorNettyRequestUpgradeStrategy;
 import org.springframework.web.util.pattern.PathPatternRouteMatcher;
 
+import java.time.Duration;
 import java.util.Map;
 
 @Configuration
@@ -40,13 +42,15 @@ public class RSocketConfig {
     }
 
     @Bean
-    public RSocketServerCustomizer rSocketServerCustomizer() {
-        return rSocketServer -> rSocketServer.payloadDecoder(PayloadDecoder.ZERO_COPY)
-                .fragment(65536);
+    public Resume resume() {
+        return new Resume().sessionDuration(Duration.ofMinutes(5));
     }
 
-//    @Bean
-//    RSocketMessageHandler messageHandler() {
-//        return new RSocketMessageHandler();
-//    }
+    @Bean
+    public RSocketServerCustomizer rSocketServerCustomizer() {
+        return rSocketServer -> rSocketServer.payloadDecoder(PayloadDecoder.ZERO_COPY)
+                .fragment(65536)
+                .resume(resume());
+    }
+
 }

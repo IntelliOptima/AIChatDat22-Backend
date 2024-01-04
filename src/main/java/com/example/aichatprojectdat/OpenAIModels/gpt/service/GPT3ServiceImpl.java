@@ -91,7 +91,7 @@ public class GPT3ServiceImpl implements IGPT3Service {
             }
         }
 
-        chatCompletionRequest.setMaxTokens(4096);
+        chatCompletionRequest.setMaxTokens(1000);
         chatCompletionRequest.setTemperature(1.0);
         chatCompletionRequest.setModel("gpt-3.5-turbo-1106");
         return chatCompletionRequest;
