@@ -10,7 +10,7 @@ import com.example.aichatprojectdat.message.model.ReadReceipt;
 import com.example.aichatprojectdat.message.service.IMessageService;
 import com.example.aichatprojectdat.message.service.IReadReceiptService;
 import com.example.aichatprojectdat.utilities.ReactiveWebsocketMethods;
-import io.rsocket.internal.jctools.queues.MessagePassingQueue;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
@@ -41,6 +41,7 @@ public class ConcurrentFixRSocketController {
     private final IDALL_E3ServiceStandard iDallE3ServiceStandard;
     private final ReactiveWebsocketMethods utilityMethods;
 
+
     private final Map<String, Sinks.Many<ChunkData>> chatroomSinks = new ConcurrentHashMap<>();
     private final Map<String, String> connectionToChatroomMap = new ConcurrentHashMap<>();
     private final Map<String, List<ChunkData>> chunkStream = new ConcurrentHashMap<>();
@@ -56,10 +57,14 @@ public class ConcurrentFixRSocketController {
             @DestinationVariable String chatroomId,
             Mono<String> requestMessage
     ) {
-        String connectionId = UUID.randomUUID().toString(); // Generate a unique ID for this connection
-        connectionToChatroomMap.put(connectionId, chatroomId); // Map the connection ID to the chatroom ID
 
-        return requestMessage.doOnNext(s -> log.info("Received message text: " + s))
+        AtomicReference<String> messageUserId = new AtomicReference<>();
+
+        return requestMessage.doOnNext(userId -> {
+                    log.info("User with id: " + userId + " has connected!");
+                    messageUserId.set(userId);
+                    connectionToChatroomMap.put(userId, chatroomId);
+                })
                 .thenMany(chatroomSinks.computeIfAbsent(chatroomId, id ->
                                 Sinks.many()
                                         .replay()
@@ -69,9 +74,9 @@ public class ConcurrentFixRSocketController {
                     // Handle the cancellation event here
                     log.info("Connection closed for chatroom: " + chatroomId);
                     // Remove the sink associated with this connection
-                    connectionToChatroomMap.get(connectionId);
+                    connectionToChatroomMap.get(messageUserId.get());
                     chatroomSinks.remove(chatroomId);
-                    connectionToChatroomMap.remove(connectionId);
+                    connectionToChatroomMap.remove(messageUserId.get());
                 });
     }
 
@@ -131,7 +136,9 @@ public class ConcurrentFixRSocketController {
 
         Flux<ChunkData> gptResponseStream = gpt3Service.streamChatContext(messages)
                 .map(chunk -> {
-                    gptAnswer.append(chunk);
+                    synchronized (gptAnswer) {
+                        gptAnswer.append(chunk);
+                    }
                     Message newMessage = Message.builder()
                             .id(gptMessageId)
                             .userId(1L)
@@ -141,13 +148,14 @@ public class ConcurrentFixRSocketController {
                             .lastModifiedDate(gptCreatedAnswer)
                             .build();
 
-                    ChunkData newChunk = ChunkData.of(gptMessageId, newMessage, (long) chunk.length(), null, false);
-                    sink.emitNext(newChunk, Sinks.EmitFailureHandler.FAIL_FAST);
-                    return newChunk;
-                });
-
-        return gptResponseStream
+                    return ChunkData.of(gptMessageId, newMessage, (long) chunk.length(), null, false);
+                })
                 .publishOn(Schedulers.boundedElastic())
+                .doOnNext(sink::tryEmitNext) // Use tryEmitNext for backpressure handling
+                .doOnError(error -> {
+                    // Log and handle error
+                    System.err.println("Error in processing stream: " + error.getMessage());
+                })
                 .doOnComplete(() -> {
                     Message completeMessage = Message.builder()
                             .id(gptMessageId)
@@ -158,9 +166,16 @@ public class ConcurrentFixRSocketController {
                             .build();
 
                     messageService.create(completeMessage).subscribe();
-                })
-                .then();
+                });
+
+        return gptResponseStream
+                .then()
+                .doOnError(error -> {
+                    // Log and handle error
+                    System.err.println("Error in finalizing stream: " + error.getMessage());
+                });
     }
+
 
     public Mono<Void> handleDallEMessage(Message chatMessage, Sinks.Many<ChunkData> sink) {
 
