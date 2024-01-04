@@ -23,6 +23,11 @@ public class UserService implements IUserService {
                 .switchIfEmpty(Mono.defer(() -> userRepository.save(user)));
     }
 
+    @Override
+    public Flux<User> findAllUsers() {
+        return userRepository.findAll();
+    }
+
     private Mono<User> findUserByEmail(String email) {
         return userRepository.findUserByEmail(email);
     }

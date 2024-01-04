@@ -7,8 +7,9 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class UserRelationRequest {
+public class PendingRelationRequestDTO {
 
-    private User userRequester;
-    private String emailRequest;
+    private Long requesterId;
+
+    private Long receiverId;
 }
