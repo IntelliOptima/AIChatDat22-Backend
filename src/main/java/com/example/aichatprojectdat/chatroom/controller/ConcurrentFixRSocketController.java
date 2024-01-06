@@ -57,7 +57,6 @@ public class ConcurrentFixRSocketController {
             @DestinationVariable String chatroomId,
             Mono<String> requestMessage
     ) {
-
         AtomicReference<String> messageUserId = new AtomicReference<>();
 
         return requestMessage.doOnNext(userId -> {
@@ -118,7 +117,7 @@ public class ConcurrentFixRSocketController {
         } else if (utilityMethods.isDalleMessage(sortedChunks)) {
 
             return processRegularMessage(sortedChunks.get(sortedChunks.size() - 1), sink)
-                    .then(Mono.defer(() -> handleDallEMessage(sortedChunks.get(0).chunk(), sink)));
+                    .then(Mono.defer(() -> handleDallEMessage(sortedChunks.get(sortedChunks.size() - 1).chunk(), sink)));
         } else {
             log.info("Handling regular message: " + sortedChunks.get(0));
             return processRegularMessage(sortedChunks.get(0), sink);

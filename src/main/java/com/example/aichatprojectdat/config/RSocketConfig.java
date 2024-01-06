@@ -52,5 +52,4 @@ public class RSocketConfig {
                 .fragment(65536)
                 .resume(resume());
     }
-
 }
