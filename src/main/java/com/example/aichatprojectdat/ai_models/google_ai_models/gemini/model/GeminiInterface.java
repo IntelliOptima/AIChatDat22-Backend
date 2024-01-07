@@ -12,7 +12,7 @@ import reactor.core.publisher.Mono;
 @HttpExchange("/v1beta/models/")
 public interface GeminiInterface {
 
-    @PostExchange("{model}:streamGenerateContent?key=AIzaSyA3GcIavODZLrDhnusoCwsCMJP8TSWfKuw")
+    @PostExchange("{model}:streamGenerateContent")
     Flux<GeminiChatCompletionResponse> getCompletion(
             @PathVariable String model,
             @RequestBody GeminiChatCompletionRequest request
