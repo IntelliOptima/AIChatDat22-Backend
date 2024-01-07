@@ -42,7 +42,7 @@ public class GeminiServiceImpl implements IGeminiService {
         } else if (message.getUserId() == USER_ID_GPT) {
             return new Content("user", List.of(new TextPart("GPT Answer: " + message.getTextMessage())));
         } else if (message.getUserId() == USER_ID_GEMINI) {
-            return new Content("role", List.of(new TextPart(message.getTextMessage())));
+            return new Content("model", List.of(new TextPart(message.getTextMessage())));
         } else {
             // Handle default or unknown case, or throw an exception if appropriate
             log.warn("Unhandled message type: {}", message);
