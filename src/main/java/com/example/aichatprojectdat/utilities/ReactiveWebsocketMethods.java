@@ -46,5 +46,9 @@ public class ReactiveWebsocketMethods {
         }
     }
 
-
+    public boolean isGeminiMessage(List<ChunkData> chunkDataList) {
+        log.info(chunkDataList.toString());
+        Message chunk = chunkDataList.get(chunkDataList.size() - 1).chunk();
+        return chunk != null && chunk.getTextMessage().toLowerCase().startsWith("@gemini");
+    }
 }

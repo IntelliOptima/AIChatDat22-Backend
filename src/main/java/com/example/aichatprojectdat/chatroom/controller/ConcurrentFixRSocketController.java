@@ -1,9 +1,10 @@
 package com.example.aichatprojectdat.chatroom.controller;
 
-import com.example.aichatprojectdat.OpenAIModels.dall_e.model.generation.ImageGenerationRequest;
-import com.example.aichatprojectdat.OpenAIModels.dall_e.service.IDALL_E3ServiceStandard;
-import com.example.aichatprojectdat.OpenAIModels.gpt.service.interfaces.IGPT3Service;
-import com.example.aichatprojectdat.OpenAIModels.gpt.service.interfaces.IGPT4Service;
+import com.example.aichatprojectdat.ai_models.OpenAIModels.dall_e.model.generation.ImageGenerationRequest;
+import com.example.aichatprojectdat.ai_models.OpenAIModels.dall_e.service.IDALL_E3ServiceStandard;
+import com.example.aichatprojectdat.ai_models.OpenAIModels.gpt.service.interfaces.IGPT3Service;
+import com.example.aichatprojectdat.ai_models.OpenAIModels.gpt.service.interfaces.IGPT4Service;
+import com.example.aichatprojectdat.ai_models.google_ai_models.gemini.service.interfaces.IGeminiService;
 import com.example.aichatprojectdat.message.model.ChunkData;
 import com.example.aichatprojectdat.message.model.Message;
 import com.example.aichatprojectdat.message.model.ReadReceipt;
@@ -39,6 +40,7 @@ public class ConcurrentFixRSocketController {
     private final IGPT3Service gpt3Service;
     private final IGPT4Service gpt4Service;
     private final IDALL_E3ServiceStandard iDallE3ServiceStandard;
+    private final IGeminiService geminiService;
     private final ReactiveWebsocketMethods utilityMethods;
 
 
@@ -118,6 +120,10 @@ public class ConcurrentFixRSocketController {
 
             return processRegularMessage(sortedChunks.get(sortedChunks.size() - 1), sink)
                     .then(Mono.defer(() -> handleDallEMessage(sortedChunks.get(sortedChunks.size() - 1).chunk(), sink)));
+        } else if (utilityMethods.isGeminiMessage(sortedChunks)) {
+
+            return processRegularMessage(sortedChunks.get(sortedChunks.size() - 1), sink)
+                    .then(Mono.defer(() -> handleGeminiContextMessage(chatroomId, sortedChunks, sink)));
         } else {
             log.info("Handling regular message: " + sortedChunks.get(0));
             return processRegularMessage(sortedChunks.get(0), sink);
@@ -168,6 +174,57 @@ public class ConcurrentFixRSocketController {
                 });
 
         return gptResponseStream
+                .then()
+                .doOnError(error -> {
+                    // Log and handle error
+                    System.err.println("Error in finalizing stream: " + error.getMessage());
+                });
+    }
+
+    public Mono<Void> handleGeminiContextMessage(String chatroomId, List<ChunkData> chunkDataList, Sinks.Many<ChunkData> sink) {
+        List<Message> messages = chunkDataList.stream()
+                .map(ChunkData::chunk)
+                .collect(Collectors.toList());
+
+        String geminiMessageId = UUID.randomUUID().toString();
+        StringBuilder geminiAnswer = new StringBuilder();
+        Instant geminiCreatedAnswer = Instant.now().plusSeconds(5);
+
+        Flux<ChunkData> geminiResponseStream = geminiService.streamChatContext(messages)
+                .map(chunk -> {
+                    synchronized (geminiAnswer) {
+                        geminiAnswer.append(chunk);
+                    }
+                    Message newMessage = Message.builder()
+                            .id(geminiMessageId)
+                            .userId(3L)
+                            .textMessage(chunk)
+                            .chatroomId(chatroomId)
+                            .createdDate(geminiCreatedAnswer)
+                            .lastModifiedDate(geminiCreatedAnswer)
+                            .build();
+
+                    return ChunkData.of(geminiMessageId, newMessage, (long) chunk.length(), null, false);
+                })
+                .publishOn(Schedulers.boundedElastic())
+                .doOnNext(sink::tryEmitNext) // Use tryEmitNext for backpressure handling
+                .doOnError(error -> {
+                    // Log and handle error
+                    System.err.println("Error in processing stream: " + error.getMessage());
+                })
+                .doOnComplete(() -> {
+                    Message completeMessage = Message.builder()
+                            .id(geminiMessageId)
+                            .userId(1L)
+                            .textMessage(geminiAnswer.toString())
+                            .chatroomId(chatroomId)
+                            .createdDate(geminiCreatedAnswer)
+                            .build();
+
+                    messageService.create(completeMessage).subscribe();
+                });
+
+        return geminiResponseStream
                 .then()
                 .doOnError(error -> {
                     // Log and handle error
