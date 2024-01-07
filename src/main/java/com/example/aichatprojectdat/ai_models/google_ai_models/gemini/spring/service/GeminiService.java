@@ -46,6 +46,30 @@ public class GeminiService {
     }
 
 
+    public Flux<String> getCompletionWithImage(List<Content> context, String text, String imageFileName) {
+        Path imagePath = Path.of("src/main/resources/", imageFileName);
+
+        return Mono.fromCallable(() -> Files.readAllBytes(imagePath))
+                .subscribeOn(Schedulers.boundedElastic())
+                .map(Base64.getEncoder()::encodeToString)
+                .flatMapMany(encodedImage -> { // Changed to flatMapMany
+                    Content userInputContent = new Content("user", List.of(
+                            new TextPart(text),
+                            new InlineDataPart(new InlineData("image/png", encodedImage))
+                    ));
+
+                    List<Content> combinedContents = new ArrayList<>(context);
+                    combinedContents.add(userInputContent);
+
+                    return geminiInterface.getCompletion(GEMINI_PRO_VISION, new GeminiChatCompletionRequest(combinedContents))
+                            .flatMapIterable(GeminiChatCompletionResponse::candidates)
+                            .map(candidate -> candidate.content().parts().get(0).text());
+                });
+    }
+
+
+
+
 
 
 }

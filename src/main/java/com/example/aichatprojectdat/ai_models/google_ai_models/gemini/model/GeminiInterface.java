@@ -17,6 +17,4 @@ public interface GeminiInterface {
             @PathVariable String model,
             @RequestBody GeminiChatCompletionRequest request
     );
-
-    Mono<?> getCompletionWithImage(GeminiChatCompletionRequest geminiChatCompletionRequest);
 }
