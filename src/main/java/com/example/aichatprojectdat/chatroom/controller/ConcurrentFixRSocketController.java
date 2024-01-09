@@ -5,6 +5,8 @@ import com.example.aichatprojectdat.ai_models.OpenAIModels.dall_e.service.IDALL_
 import com.example.aichatprojectdat.ai_models.OpenAIModels.gpt.service.interfaces.IGPT3Service;
 import com.example.aichatprojectdat.ai_models.OpenAIModels.gpt.service.interfaces.IGPT4Service;
 import com.example.aichatprojectdat.ai_models.google_ai_models.gemini.service.interfaces.IGeminiService;
+import com.example.aichatprojectdat.ai_models.stability_ai_models.stablediffusion.models.text_to_image.JSONStructureRequest.StableDiffusionTextToImageRequest;
+import com.example.aichatprojectdat.ai_models.stability_ai_models.stablediffusion.service.interfaces.IStableDiffusionService;
 import com.example.aichatprojectdat.message.model.ChunkData;
 import com.example.aichatprojectdat.message.model.Message;
 import com.example.aichatprojectdat.message.model.ReadReceipt;
@@ -41,6 +43,7 @@ public class ConcurrentFixRSocketController {
     private final IGPT4Service gpt4Service;
     private final IDALL_E3ServiceStandard iDallE3ServiceStandard;
     private final IGeminiService geminiService;
+    private final IStableDiffusionService stableDiffusionService;
     private final ReactiveWebsocketMethods utilityMethods;
 
 
@@ -81,6 +84,23 @@ public class ConcurrentFixRSocketController {
                 });
     }
 
+    @MessageMapping("chat.send.stableDiffusion.{chatroomId}")
+    public Mono<Void> receiveStableDiffusionMessage(
+            @DestinationVariable String chatroomId,
+            ChunkData chunkData,
+            StableDiffusionTextToImageRequest request) {
+
+        Sinks.Many<ChunkData> sink = chatroomSinks.computeIfAbsent(chatroomId, id ->
+                Sinks.many()
+                        .multicast()
+                        .onBackpressureBuffer());
+
+        log.info("Received StableDiffusion Request");
+
+        return processRegularMessage(chunkData, sink)
+                .then(Mono.defer(() -> handleStableDiffusionRequest(request, chunkData.chunk(), sink)));
+    }
+
     @MessageMapping("chat.send.{chatroomId}")
     public Mono<Void> receiveMessage(@DestinationVariable String chatroomId, ChunkData chunkData) {
         log.info("Received message: {}", chunkData.chunk().getTextMessage());
@@ -117,10 +137,12 @@ public class ConcurrentFixRSocketController {
                     .then(Mono.defer(() -> handleGptContextMessage(chatroomId, sortedChunks, sink)));
 
         } else if (utilityMethods.isDalleMessage(sortedChunks)) {
+            log.info("Handling DALL-E 3 message");
 
             return processRegularMessage(sortedChunks.get(sortedChunks.size() - 1), sink)
                     .then(Mono.defer(() -> handleDallEMessage(sortedChunks.get(sortedChunks.size() - 1).chunk(), sink)));
         } else if (utilityMethods.isGeminiMessage(sortedChunks)) {
+            log.info("Handling Gemini message");
 
             return processRegularMessage(sortedChunks.get(sortedChunks.size() - 1), sink)
                     .then(Mono.defer(() -> handleGeminiContextMessage(chatroomId, sortedChunks, sink)));
@@ -258,6 +280,35 @@ public class ConcurrentFixRSocketController {
                     Message messageToSave = dalleMessageRef.get(); // Retrieve the dalleMessage
                     if (messageToSave != null) {
                         messageService.create(messageToSave).subscribe(); // Save the message
+                    }
+                }).then();
+    }
+
+    public Mono<Void> handleStableDiffusionRequest(StableDiffusionTextToImageRequest request, Message chatMessage, Sinks.Many<ChunkData> sink) {
+        String engineModel = utilityMethods.extractModelId(chatMessage.getTextMessage());
+        AtomicReference<Message> stableDiffusionMessageRef = new AtomicReference<>(); // AtomicReference to hold the stableDiffusionMessage
+
+        return stableDiffusionService.generateTextToImages(engineModel, request)
+                .doFirst(() -> System.out.println(request))
+                .publishOn(Schedulers.boundedElastic())
+                .doOnNext(response -> {
+                    Instant createdTime = Instant.now();
+                    Message stableDiffusionMessage = Message.builder()
+                            .userId(4L)
+                            .textMessage(response)
+                            .chatroomId(chatMessage.getChatroomId())
+                            .createdDate(createdTime)
+                            .lastModifiedDate(createdTime)
+                            .build();
+                    ChunkData stableDiffusionChunkData = ChunkData.of(UUID.randomUUID().toString(), stableDiffusionMessage, 0L, 1L, true);
+                    stableDiffusionMessageRef.set(stableDiffusionChunkData.chunk());
+
+                    sink.emitNext(stableDiffusionChunkData, Sinks.EmitFailureHandler.FAIL_FAST);
+                })
+                .doFinally(signalType -> {
+                    Message messageToSave = stableDiffusionMessageRef.get();
+                    if (messageToSave != null) {
+                        messageService.create(messageToSave).subscribe();
                     }
                 }).then();
     }

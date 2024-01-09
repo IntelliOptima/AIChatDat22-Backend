@@ -22,18 +22,11 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class GeminiService {
+
     public static final String GEMINI_PRO = "gemini_pro";
     public static final String GEMINI_PRO_VISION = "gemini-pro-vision";
 
     private final GeminiInterface geminiInterface;
-
-    public Flux<GeminiChatCompletionResponse> getCompletion(GeminiChatCompletionRequest request) {
-        return geminiInterface.getCompletion(GEMINI_PRO, request);
-    }
-
-    public Flux<GeminiChatCompletionResponse> getCompletionWithImage(GeminiChatCompletionRequest request) {
-        return geminiInterface.getCompletion(GEMINI_PRO_VISION, request);
-    }
 
     public Flux<String> getCompletion(List<Content> context) {
         // Create a mutable list from the context
