@@ -58,5 +58,6 @@ gemini:
 stabilityai:
   api:
     key: ${STABILITY_AI_API}
+
 stablediffusion:
   baseurl: https://api.stability.ai

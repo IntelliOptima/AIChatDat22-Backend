@@ -13,9 +13,15 @@ import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 @Configuration
 public class StableDiffusionConfig {
 
+    @Value("${stabilityai.api.key}")
+    private String apiKey;
+
+    @Value("${stablediffusion.baseurl}")
+    private String baseUrl;
+
+
     @Bean
-    public WebClient stableDiffusionRestClient(@Value("${stablediffusion.baseurl}") String baseUrl,
-                                      @Value("${stabilityai.api.key}") String apiKey) {
+    public WebClient stableDiffusionRestClient() {
         return WebClient.builder()
                 .baseUrl(baseUrl)
                 .defaultHeader("Authorization", "Bearer " + apiKey)
