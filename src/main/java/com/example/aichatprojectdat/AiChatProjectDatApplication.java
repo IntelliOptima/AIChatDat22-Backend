@@ -23,6 +23,8 @@ public class AiChatProjectDatApplication {
         return args -> {
             userService.findOrCreate(User.chatGPTUser()).block();
             userService.findOrCreate(User.DallE()).block();
+            userService.findOrCreate(User.Gemini()).block();
+            userService.findOrCreate(User.StableDiffusion()).block();
         };
     }
 

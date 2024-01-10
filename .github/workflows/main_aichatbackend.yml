@@ -9,6 +9,10 @@ on:
       - main
   workflow_dispatch:
 
+env:
+  GPT_API: ${{ secrets.GPT_API }}
+  STABILITY_AI_API: ${{ secrets.STABILITY_AI_API }}
+
 jobs:
   build:
     runs-on: ubuntu-latest

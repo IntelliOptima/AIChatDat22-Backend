@@ -1,10 +1,10 @@
 package com.example.aichatprojectdat.config.aspects.dalle;
 
-import com.example.aichatprojectdat.OpenAIModels.custom_interface.DALLE_Exchange;
-import com.example.aichatprojectdat.OpenAIModels.dall_e.model.generation.ImageGenerationRequest;
+import com.example.aichatprojectdat.ai_models.OpenAIModels.custom_interface.DALLE_Exchange;
+import com.example.aichatprojectdat.ai_models.OpenAIModels.dall_e.model.generation.ImageGenerationRequest;
 
-import com.example.aichatprojectdat.OpenAIModels.dall_e.model.generation.ImageGenerationResponse;
-import com.example.aichatprojectdat.OpenAIModels.dall_e.spring.service.interfaces.IDALL_EService;
+import com.example.aichatprojectdat.ai_models.OpenAIModels.dall_e.model.generation.ImageGenerationResponse;
+import com.example.aichatprojectdat.ai_models.OpenAIModels.dall_e.spring.service.interfaces.IDALL_EService;
 
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -23,7 +23,7 @@ public class DALLE_ExchangeAspect {
     }
 
 
-    @Pointcut("within(@com.example.aichatprojectdat.OpenAIModels.custom_interface.DALLE_Exchange *)")
+    @Pointcut("within(@com.example.aichatprojectdat.ai_models.OpenAIModels.custom_interface.DALLE_Exchange *)")
     public void dallEExchangeInterfacePointcut() {}
 
     @Around("dallEExchangeInterfacePointcut()")

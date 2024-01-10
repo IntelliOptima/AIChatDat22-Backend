@@ -42,6 +42,22 @@ logging:
     '[io.r2dbc]': info
 
 
+# OpenAI API ----
 openai:
   api:
     key: ${GPT_API}
+
+# Google API ----
+#googleai:
+ # api:
+  #  key: ${GEMINI_API}
+gemini:
+  baseurl: https://generativelanguage.googleapis.com
+
+# Stability Ai API ----
+stabilityai:
+  api:
+    key: ${STABILITY_AI_API}
+
+stablediffusion:
+  baseurl: https://api.stability.ai
