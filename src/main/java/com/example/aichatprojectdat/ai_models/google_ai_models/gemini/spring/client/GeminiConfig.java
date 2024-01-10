@@ -13,12 +13,21 @@ import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 public class GeminiConfig {
 
     // Bean configuration
-    @Bean
+    /*@Bean
     public WebClient geminiRestClient(@Value("${gemini.baseurl}") String baseUrl,
                                       @Value("${googleai.api.key}") String apiKey) {
         return WebClient.builder()
                 .baseUrl(baseUrl)
                 .defaultHeader("x-goog-api-key", apiKey)
+                .defaultHeader("Content-Type", "application/json")
+                .defaultHeader("Accept", "application/json")
+                .build();
+    }*/
+
+    @Bean
+    public WebClient geminiRestClient(@Value("${gemini.baseurl}") String baseUrl) {
+        return WebClient.builder()
+                .baseUrl(baseUrl)
                 .defaultHeader("Content-Type", "application/json")
                 .defaultHeader("Accept", "application/json")
                 .build();

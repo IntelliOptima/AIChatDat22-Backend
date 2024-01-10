@@ -48,9 +48,9 @@ openai:
     key: ${GPT_API}
 
 # Google API ----
-googleai:
-  api:
-    key: ${GEMINI_API}
+#googleai:
+ # api:
+  #  key: ${GEMINI_API}
 gemini:
   baseurl: https://generativelanguage.googleapis.com
 
