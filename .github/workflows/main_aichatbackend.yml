@@ -9,6 +9,10 @@ on:
       - main
   workflow_dispatch:
 
+env:
+  GPT_API: ${{ secrets.GPT_API }}
+  STABILITY_AI_API: ${{ secrets.STABILITY_AI_API }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -26,9 +30,6 @@ jobs:
       - name: Build, unit tests and integration tests
         run: |
           mvn clean install
-        env:
-          GPT_API: ${{ secrets.GPT_API }}
-          STABILITY_AI_API: ${{ secrets.STABILITY_AI_API }}
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v3
