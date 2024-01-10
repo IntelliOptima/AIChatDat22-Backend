@@ -1,8 +1,7 @@
 package com.example.aichatprojectdat.user.restController;
 
 import com.example.aichatprojectdat.user.model.User;
-import com.example.aichatprojectdat.user.model.UserRelation;
-import com.example.aichatprojectdat.user.model.UserRelationRequest;
+import com.example.aichatprojectdat.user.model.UserRelationRequestDTO;
 import com.example.aichatprojectdat.user.service.UserRelationServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -23,7 +22,7 @@ public class UserRelationController {
     }
 
     @PostMapping
-    Mono<User> createUserRelation (@RequestBody UserRelationRequest userRelationRequest) {
-        return userRelationService.createUserRelation(userRelationRequest);
+    Mono<User> createUserRelation (@RequestBody UserRelationRequestDTO userRelationRequestDTO) {
+        return userRelationService.createUserRelation(userRelationRequestDTO);
     }
 }

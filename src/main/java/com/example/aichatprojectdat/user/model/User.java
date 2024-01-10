@@ -49,4 +49,12 @@ public record User (
     public static User DallE() {
         return new User(2L, "dalle@chatgpt.com", "Dall-E", "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.magnolia-cms.com%2Fmarketplace%2Fdetail%2Fdall-e.html&psig=AOvVaw2g7wAwzEuIi7zeJ7Q7glAO&ust=1700613408374000&source=images&cd=vfe&ved=0CBEQjRxqFwoTCOiFveLs04IDFQAAAAAdAAAAABAE", null, null, null);
     }
+
+    public static User Gemini() {
+        return new User(3L, "gemini@google.com", "Gemini-Pro","https://www.google.com/url?sa=i&url=https%3A%2F%2Fen.m.wikipedia.org%2Fwiki%2FFile%3AGoogle_Bard_logo.svg&psig=AOvVaw0zB7jzt1inDYrM5dcufRVi&ust=1704677049447000&source=images&cd=vfe&ved=0CBEQjRxqFwoTCLC78oKPyoMDFQAAAAAdAAAAABAe", null, null, null);
+    }
+
+    public static User StableDiffusion() {
+        return new User(4L, "stableDiffusionAi@stabilityAi", "StableDiffusion", "https://venturebeat.com/wp-content/uploads/2022/12/Stability_AI_logo_Logo.jpeg?fit=1920%2C1005&strip=all", null, null, null);
+    }
 }

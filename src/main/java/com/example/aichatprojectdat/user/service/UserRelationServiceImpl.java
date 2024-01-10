@@ -2,7 +2,8 @@ package com.example.aichatprojectdat.user.service;
 
 import com.example.aichatprojectdat.user.model.User;
 import com.example.aichatprojectdat.user.model.UserRelation;
-import com.example.aichatprojectdat.user.model.UserRelationRequest;
+import com.example.aichatprojectdat.user.model.UserRelationRequestDTO;
+import com.example.aichatprojectdat.user.repository.PendingRelationRequestRepository;
 import com.example.aichatprojectdat.user.repository.UserRelationRepository;
 import com.example.aichatprojectdat.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ public class UserRelationServiceImpl implements IUserRelationService{
 
     private final UserRelationRepository userRelationRepository;
     private final UserRepository userRepository;
+    private final PendingRelationRequestRepository pendingRelationRequestRepository;
 
     @Override
     public Flux<UserRelation> getAllUserRelationsFromUserId(Long userId) {
@@ -32,15 +34,16 @@ public class UserRelationServiceImpl implements IUserRelationService{
     }
 
     @Override
-    public Mono<User> createUserRelation(UserRelationRequest userRelationRequest) {
-        return userRepository.findUserByEmail(userRelationRequest.getEmailRequest())
+    public Mono<User> createUserRelation(UserRelationRequestDTO userRelationRequestDTO) {
+        return userRepository.findUserByEmail(userRelationRequestDTO.getEmailRequest())
                 .flatMap(user -> {
-                    if (!user.id().equals(userRelationRequest.getUserRequester().id())) {
-                        UserRelation newUserRelation = UserRelation.builder()
-                                .userId(userRelationRequest.getUserRequester().id())
-                                .friendId(user.id())
-                                .build();
-                        return userRelationRepository.save(newUserRelation)
+                    if (!user.id().equals(userRelationRequestDTO.getUserRequester().id())) {
+                        return pendingRelationRequestRepository.deleteByRequesterIdAndReceiverId(
+                                       user.id() , userRelationRequestDTO.getUserRequester().id())
+                                .then(userRelationRepository.save(UserRelation.builder()
+                                        .userId(userRelationRequestDTO.getUserRequester().id())
+                                        .friendId(user.id())
+                                        .build()))
                                 .thenReturn(user);
                     } else {
                         return Mono.error(new RuntimeException("Cannot create a relation with oneself"));
