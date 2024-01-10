@@ -46,6 +46,9 @@ jobs:
           distribution: temurin
           java-version: 17
           cache: maven
+        env:
+          GPT_API: ${{ secrets.GPT_API }}
+          STABILITY_AI_API: ${{ secrets.STABILITY_AI_API }}
       - name: Build container image
         run: |
           mvn spring-boot:build-image \
