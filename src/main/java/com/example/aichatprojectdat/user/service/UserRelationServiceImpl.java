@@ -16,7 +16,7 @@ import reactor.core.publisher.Mono;
 @Service
 @Primary
 @RequiredArgsConstructor
-public class UserRelationServiceImpl implements IUserRelationService{
+public class UserRelationServiceImpl implements IUserRelationService {
 
     private final UserRelationRepository userRelationRepository;
     private final UserRepository userRepository;
@@ -39,7 +39,7 @@ public class UserRelationServiceImpl implements IUserRelationService{
                 .flatMap(user -> {
                     if (!user.id().equals(userRelationRequestDTO.getUserRequester().id())) {
                         return pendingRelationRequestRepository.deleteByRequesterIdAndReceiverId(
-                                       user.id() , userRelationRequestDTO.getUserRequester().id())
+                                        user.id(), userRelationRequestDTO.getUserRequester().id())
                                 .then(userRelationRepository.save(UserRelation.builder()
                                         .userId(userRelationRequestDTO.getUserRequester().id())
                                         .friendId(user.id())
@@ -47,6 +47,24 @@ public class UserRelationServiceImpl implements IUserRelationService{
                                 .thenReturn(user);
                     } else {
                         return Mono.error(new RuntimeException("Cannot create a relation with oneself"));
+                    }
+                });
+    }
+
+    @Override
+    public Mono<User> deleteUserRelation(UserRelationRequestDTO userRelationRequestDTO) {
+        Long userId = userRelationRequestDTO.getUserRequester().id();
+        String friendEmail = userRelationRequestDTO.getEmailRequest();
+
+        return userRepository.findUserByEmail(friendEmail)
+                .flatMap(friend -> {
+                    Long friendId = friend.id();
+
+                    if (!userId.equals(friendId)) {
+                        return userRelationRepository.deleteByFriendIdAndAndUserId(friendId, userId)
+                                .thenReturn(friend);
+                    } else {
+                        return Mono.error(new RuntimeException("Cannot delete a relation with oneself"));
                     }
                 });
     }

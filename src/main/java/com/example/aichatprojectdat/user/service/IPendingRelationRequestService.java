@@ -12,4 +12,6 @@ public interface IPendingRelationRequestService {
     Flux<User> getOutgoingRequestsFromUserId(Long requesterId);
 
     Mono<User> createPendingRequest(PendingRelationRequestDTO pendingRelationRequestDTO);
+
+    Mono<User> deletePendingRequest(PendingRelationRequestDTO pendingRelationRequestDTO);
 }

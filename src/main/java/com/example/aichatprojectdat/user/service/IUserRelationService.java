@@ -13,4 +13,6 @@ public interface IUserRelationService {
     Flux<User> getAllUserFriendsFromUserId(Long userId);
 
     Mono<User> createUserRelation(UserRelationRequestDTO userRelationRequestDTO);
+
+    Mono<User> deleteUserRelation(UserRelationRequestDTO userRelationRequestDTO);
 }

@@ -47,4 +47,20 @@ public class PendingRelationRequestServiceImpl implements IPendingRelationReques
                     }
                 });
     }
+
+    @Override
+    public Mono<User> deletePendingRequest(PendingRelationRequestDTO pendingRelationRequestDTO) {
+        return userRepository.findById(pendingRelationRequestDTO.getReceiverId())
+                .flatMap(receiver -> {
+                    if (!receiver.id().equals(pendingRelationRequestDTO.getRequesterId())) {
+                        return pendingRelationRequestRepository.deleteByRequesterIdAndReceiverId(pendingRelationRequestDTO.getRequesterId(), receiver.id())
+                                .thenReturn(receiver);
+                    } else {
+                        return Mono.error(new RuntimeException("Cannot send a request to oneself"));
+                    }
+                });
+    }
+
+
+
 }

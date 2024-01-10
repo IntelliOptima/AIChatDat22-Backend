@@ -110,9 +110,9 @@ public class ChatroomRSocketController {
             handleGptContextMessage(chatMessages, sink);
         }
 
-        if (chatMessages.get(0).getTextMessage().toLowerCase().startsWith("@dalle")) {
+        if (chatMessages.get(chatMessages.size()-1).getTextMessage().toLowerCase().startsWith("@dalle")) {
             log.info("Emitting DallE Response");
-            handleDallEMessage(chatMessages.get(0), sink);
+            handleDallEMessage(chatMessages.get(chatMessages.size()-1), sink);
         }
     }
 

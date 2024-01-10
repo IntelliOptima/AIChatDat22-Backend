@@ -32,4 +32,9 @@ public class PendingRelationRequestController {
     Mono<User> createPendingRequest (@RequestBody PendingRelationRequestDTO pendingRelationRequestDTO) {
         return pendingRelationRequestService.createPendingRequest(pendingRelationRequestDTO);
     }
+
+    @DeleteMapping("/delete")
+    Mono<User> deletePendingRequest (@RequestBody PendingRelationRequestDTO pendingRelationRequestDTO) {
+        return pendingRelationRequestService.deletePendingRequest(pendingRelationRequestDTO);
+    }
 }

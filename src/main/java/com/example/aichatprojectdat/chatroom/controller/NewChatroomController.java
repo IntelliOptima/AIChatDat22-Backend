@@ -155,11 +155,17 @@ public class NewChatroomController {
 
 
     private Flux<ChunkData> handleDallEMessage(String chatroomId, List<ChunkData> chunkData) {
+        log.info("ChatroomRSocketController is calling this method! ");
+        List<Message> messages = chunkData.stream()
+                .map(ChunkData::chunk)
+                .toList();
         // Logic to handle Dall-E message
+        String dalleCommand2 = messages.get(messages.size() - 1).getTextMessage().split("@dalle ")[1];
         String dalleCommand = chunkData.get(0).chunk().getTextMessage().split("@dalle ")[1];
         String chunkDataIdentifier = UUID.randomUUID().toString();
-        return iDallE3ServiceStandard.generateImage(dalleCommand)
+        return iDallE3ServiceStandard.generateImage(dalleCommand2)
                 .flatMap(dalleResponse -> {
+                    log.info("Creating image from Dalle!");
                     Instant createdTime = Instant.now();
 
                     Message dalleMessage = Message.builder()
