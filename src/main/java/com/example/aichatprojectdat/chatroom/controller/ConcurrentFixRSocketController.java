@@ -6,6 +6,7 @@ import com.example.aichatprojectdat.ai_models.OpenAIModels.gpt.service.interface
 import com.example.aichatprojectdat.ai_models.OpenAIModels.gpt.service.interfaces.IGPT4Service;
 import com.example.aichatprojectdat.ai_models.google_ai_models.gemini.service.interfaces.IGeminiService;
 import com.example.aichatprojectdat.ai_models.stability_ai_models.stablediffusion.models.text_to_image.JSONStructureRequest.StableDiffusionTextToImageRequest;
+import com.example.aichatprojectdat.ai_models.stability_ai_models.stablediffusion.models.text_to_image.StableDiffusionTextToImageEngineList;
 import com.example.aichatprojectdat.ai_models.stability_ai_models.stablediffusion.service.interfaces.IStableDiffusionService;
 import com.example.aichatprojectdat.message.model.ChunkData;
 import com.example.aichatprojectdat.message.model.Message;
@@ -19,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -284,6 +286,10 @@ public class ConcurrentFixRSocketController {
                 }).then();
     }
 
+    @GetMapping("/v1/engines/list")
+    public Mono<List<StableDiffusionTextToImageEngineList>> getList() {
+        return stableDiffusionService.getList();
+    }
     public Mono<Void> handleStableDiffusionRequest(StableDiffusionTextToImageRequest request, Message chatMessage, Sinks.Many<ChunkData> sink) {
         String engineModel = utilityMethods.extractModelId(chatMessage.getTextMessage());
         AtomicReference<Message> stableDiffusionMessageRef = new AtomicReference<>(); // AtomicReference to hold the stableDiffusionMessage
