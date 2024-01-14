@@ -25,4 +25,9 @@ public class UserRelationController {
     Mono<User> createUserRelation (@RequestBody UserRelationRequestDTO userRelationRequestDTO) {
         return userRelationService.createUserRelation(userRelationRequestDTO);
     }
+
+    @DeleteMapping("/delete")
+    Mono<User> deleteUserRelation (@RequestBody UserRelationRequestDTO userRelationRequestDTO) {
+        return userRelationService.deleteUserRelation(userRelationRequestDTO);
+    }
 }
